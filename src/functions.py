@@ -30,7 +30,7 @@ def polynomial_features(x, p, intercept=True):
     Generate a design matrix X.
 
     Parameters:
-        x : dataset
+        x: dataset
         p: number of features
         intercept: adds a column of intercept if set to True
 
@@ -53,19 +53,33 @@ def polynomial_features(x, p, intercept=True):
     return X 
 
 def standardize(X, y):
-    # Standardize features (zero mean, unit variance for each feature)
+    '''
+    Scale and standardize a design matrix X and data y.
+
+    Parameters:
+        X: np.ndarray
+        y: np.ndarray
+    
+    Returns:
+        X_norm: np.ndarray
+        y_centered: np.ndarray
+        
+    '''
     X_mean = X.mean(axis=0) # The mean of each column/feature
     X_std = X.std(axis=0)
     X_std[X_std == 0] = 1  # safeguard to avoid division by zero for constant features
     X_norm = (X - X_mean) / X_std
 
-    # Center the target to zero mean (optional, to simplify intercept handling)
+    # Center the target to zero mean
     y_mean = y.mean()
     y_centered = y - y_mean
 
     return X_norm, y_centered
 
 def split_n_train(X, y, size):
+    '''
+    ...
+    '''
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=size)
 
     return X_train, X_test, y_train, y_test
