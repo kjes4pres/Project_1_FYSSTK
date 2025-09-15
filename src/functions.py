@@ -108,10 +108,18 @@ def R2(y_data, y_pred):
                    
 
 # --- Part a) ---
-
+def OLS_parameters(X, y):
+    ''' 
+    Find the OLS parameters
+    '''
+    return np.linalg.pinv(X) @ y
 
 # --- Part b) ---
-
+def Ridge_parameters(X, y, lamb=0.01):
+    # Assumes X is scaled and has no intercept column
+    I = np.eye(np.shape(X.T @ X)[0])
+    
+    return np.linalg.inv(X.T @ X + lamb*I) @ X.T @ y
 
 # --- Part c) ---
 
