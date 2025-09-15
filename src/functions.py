@@ -42,7 +42,7 @@ def polynomial_features(x, p, intercept=True):
 
     if intercept:
         X = np.zeros((n, p + 1))
-        X[:, 0] = 1
+        X[:, 0] = 1  # adds intercept
         for i in range(1, p + 1):
             X[:, i] = x ** i
     else:
@@ -76,7 +76,7 @@ def standardize(X, y):
 
     return X_norm, y_centered
 
-def split_n_train(X, y, size):
+def split_n_train(X, y, size=0.3):
     '''
     ...
     '''
