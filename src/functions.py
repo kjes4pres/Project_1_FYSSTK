@@ -76,14 +76,6 @@ def standardize(X, y):
 
     return X_norm, y_centered
 
-def split_n_train(X, y, size=0.3):
-    '''
-    ...
-    '''
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=size)
-
-    return X_train, X_test, y_train, y_test
-
 def MSE(y_data, y_pred):
     ''' 
     Mean square error
