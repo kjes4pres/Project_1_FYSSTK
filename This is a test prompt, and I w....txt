@@ -1,0 +1,18 @@
+[Bruker]
+
+This is a test prompt, and I will upload your answer to my GitHub to get started with logging my usage of AI tools. Can you tell me a joke? And maybe send a greeting to my instructor who might read this when looking over my weekly exercises.
+
+
+[GPT]
+
+Sure! Here’s a joke for you:
+
+Why don't scientists trust atoms?
+
+Because they make up everything!
+
+And a friendly greeting for your instructor: 
+
+Hello! I hope this week has been filled with learning and growth. Thank you for guiding us through this journey! 
+
+Good luck with your GitHub documentation!
