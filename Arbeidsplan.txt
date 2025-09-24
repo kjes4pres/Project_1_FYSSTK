@@ -1,0 +1,32 @@
+Arbeidsplan og standard for rapporten
+
+---Vi bruker:---
+- sklearn polynomial features
+- sklearn StandardScaler
+
+---Vi bruker IKKE:---
+- intercept
+
+---For plotting:---
+Importer: 
+
+"""
+import matplotlib.style as mplstyle
+mplstyle.use(['ggplot', 'fast'])
+
+plt.rcParams.update({
+    "text.usetex": True,       
+    "font.family": "serif",    
+    "font.size": 10, 
+})
+"""
+
+- colormap: 'plasma'
+- plot med kun linjer, default farger
+
+OBS! Når du bruker ggplot så er grid default, så om du skriver plt.grid() kommer det IKKE grid opp.
+
+---Rekkefølge:---
+1) Train test split sklearn
+2) Polynomial features på test set only
+3) Skaler med sklearn 
