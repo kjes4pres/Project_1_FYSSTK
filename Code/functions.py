@@ -12,7 +12,7 @@ September 2025
 
 import numpy as np
 
-np.random.seed(2418)
+np.random.seed(2018)
 
 # --- General functions ---
 def make_data(n):
