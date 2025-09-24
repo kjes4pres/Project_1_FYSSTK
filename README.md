@@ -1,4 +1,14 @@
 # Project 1 FYS-STK4155, Fall 2025
-Repository for collaboration on project 1.
+*Authors: Kjersti Stangeland, Jenny Guldvog, Ingvild Olden Bjerkelund & Sverre Johansen*
 
-Authors: Kjersti Stangeland, Jenny Guldvog, Ingvild Olden Bjerkelund & Sverre Johansen
+This is a collaboration repository for project 1 in FYS-STK4155. The project invlovles the assessment of regression methods, gradient descent and resampling techniques. The aim is to gain an overview of the strengths and weaknesses of the different methods, learn about their implications and test their abilities to predict the Runge function. 
+
+### How to install required packages
+A `requirements.txt` file is located in the repository. To reproduce our results, use the packages listed here. To install the packages, download the `requirements.txt` file, open your terminal and locate your project repository where you placed the downloaded file, in the command line write "´pip install -r requirements.txt´" or if you're using a conda environment type `conda install --file requirements.txt`.
+
+### Overview of contents
+The repository is organizewd as followed:
+* `/Code/functions.py` contains functions and modules used across the project.
+* `/Code/a_and_b.ipynb` makes use of the functions in `/Code/functions.py` and produces results for tsk a and b of the project. OLS and Ridge regression are analyzed in terms of MSE, dependence on model complexity, and regularization parameter. 
+* ...
+* `/Code/kjersti_week39.ipynb` is a temporary notebook for answering the weekly exercises of week 39. 
