@@ -12,6 +12,8 @@ September 2025
 
 import numpy as np
 
+np.random.seed(2418)
+
 # --- General functions ---
 def make_data(n):
     '''
@@ -19,7 +21,7 @@ def make_data(n):
     of the Runge function.
     '''
     x = np.linspace(-1, 1, n)
-    y = 1/(1 + 25*x**2) + np.random.normal(0, 0.1)
+    y = 1/(1 + 25*x**2) + np.random.normal(0, 1)
 
     return x, y
 
