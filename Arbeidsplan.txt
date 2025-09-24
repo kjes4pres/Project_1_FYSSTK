@@ -3,6 +3,7 @@ Arbeidsplan og standard for rapporten
 ---Vi bruker:---
 - sklearn polynomial features
 - sklearn StandardScaler
+- np.random.seed(2018)
 
 ---Vi bruker IKKE:---
 - intercept
@@ -23,6 +24,7 @@ plt.rcParams.update({
 
 - colormap: 'plasma'
 - plot med kun linjer, default farger
+- husk å sammenlign test og train (god test da er modellen god på å generalisere)
 
 OBS! Når du bruker ggplot så er grid default, så om du skriver plt.grid() kommer det IKKE grid opp.
 
@@ -30,3 +32,13 @@ OBS! Når du bruker ggplot så er grid default, så om du skriver plt.grid() kom
 1) Train test split sklearn
 2) Polynomial features på test set only
 3) Skaler med sklearn 
+
+---Ønskede resultat fra oppgavene:---
+a) MSE/R2 + theta (legg i appendix, gi beste estimat for degree) HUSK Å VISE TEST OG TRAIN
+b) MSE/R2 + theta (samma her)
+c) 
+d)
+e)
+f)
+g)
+h)
