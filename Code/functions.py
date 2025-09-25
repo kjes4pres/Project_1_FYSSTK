@@ -26,15 +26,32 @@ from sklearn.linear_model import Ridge
 np.random.seed(2018)
 
 # --- General functions ---
-def make_data(n):
-    '''
-    Make a dataset with a given number (n) datapoints
-    of the Runge function.
-    '''
-    x = np.linspace(-1, 1, n)
-    y = 1/(1 + 25*x**2) + np.random.normal(0, 1)
+#Definere runge
+def f_true(x):   
+    return 1.0 / (1.0 + 25.0 * x**2)  # Runge-lignende funksjon
 
-    return x, y
+def make_data(n, seed=seed):        
+    x = np.linspace(-1, 1, n)   
+
+    y_clean = f_true(x)    
+    y = y_clean + np.random.normal(0, 1)
+
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, test_size=0.2, random_state=seed, shuffle=True
+    )
+
+    train = (x_train, y_train)
+    test  = (x_test, y_test)
+    full  = (x, y, y_clean)
+    return train, test, full
+
+"""
+How to use:
+(train, test, full) = make_dataset(n_points)
+x_train, y_train = train
+x_test, y_test = test
+x_all, y_all, y_all_clean = full 
+"""
 
 def polynomial_features(x, p, intercept=True):
     '''
@@ -224,5 +241,123 @@ def gradient_descent_advanced(X, y, method='gd', lr_method='ols', learning_rate=
 
 # --- Part g) ---
 
+def ols(x_train, y_train, x_eval, degree):    
+    model = make_pipeline(
+        PolynomialFeatures(degree=degree, include_bias=True), 
+        LinearRegression(fit_intercept=False))    
+
+    model.fit(x_train.reshape(-1, 1), y_train)  
+    y_predicted = model.predict(x_eval.reshape(-1, 1)).ravel()    
+
+    return y_predicted, model
+
+def bootstrap(degrees, x_train, x_test, y_train, y_test, x_grid, boots_reps, seed=seed):
+
+    rng = np.random.default_rng(seed)
+    y_true = f_true(x_grid)
+
+    boot_results = {
+        "degree": [], 
+        "bias2_boots": [],
+        "var_boots": [], 
+        "mse_boots": [], 
+        "test_mse": [], 
+        "train_mse": []}
+
+    for d in degrees:
+        #Direct-fit (regular OLS without bootstrapping) on train/test MSE
+        y_predicted_train, model = ols(x_train, y_train, x_train, degree=d)
+        y_predicted_test = model.predict(x_test.reshape(-1,1)).ravel()
+
+        train_mse = mse(y_train, y_predicted_train)
+        test_mse = mse(y_test, y_predicted_test)
+
+        boots_predicted = np.empty((boots_reps, x_grid.size), dtype=np.float64)
+
+        #Bootstrap, and OLS on the bootstrap values
+        for b in range(boots_reps):
+            idx_b = rng.choice(x_train.size, size=x_train.size, replace=True)
+            xb, yb = x_train[idx_b], y_train[idx_b]
+            y_pred_boot, _ = ols(xb, yb, x_grid, degree=d)
+            boots_predicted[b] = y_pred_boot
+
+        mean_boots = boots_predicted.mean(axis=0)
+        var_boots = boots_predicted.var(axis=0, ddof=1)
+        bias2_boots = (mean_boots - y_true)**2
+        mse_boots = ((boots_predicted - y_true[None,:])**2).mean(axis=0)
+
+        boot_results["degree"].append(d)
+        boot_results["bias2_boots"].append(bias2_boots.mean())
+        boot_results["var_boots"].append(var_boots.mean())
+        boot_results["mse_boots"].append(mse_boots.mean())
+        boot_results["train_mse"].append(train_mse)
+        boot_results["test_mse"].append(test_mse)
+
+    for k in list(boot_results.keys()):
+        boot_results[k] = np.array(boot_results[k])
+
+    return boot_results
+
 
 # --- Part h) ---
+
+#K-fold cross-validation for OLS
+
+def kfold_cv_mse_ols(degree, k, x, y, seed=seed):
+    kf = KFold(n_splits=k, shuffle=True, random_state=seed)
+    kfold_mses = []
+    for train_idx, val_idx in kf.split(x):
+        x_train_cv, x_val = x[train_idx], x[val_idx]
+        y_train_cv, y_val = y[train_idx], y[val_idx]
+
+        predicted_val, _ = ols(x_train_cv, y_train_cv, x_val, degree)
+        kfold_mses.append(mse(y_val, predicted_val))
+
+    return np.mean(kfold_mses)
+
+#K-fold cross-validation for ridge, lasso
+
+    def cv_for_methods(method, degree, lambdas, k, x, y, seed=seed):
+    x = np.asarray(x); y = np.asarray(y)
+
+    kf = KFold(n_splits=k, shuffle=True, random_state=seed)
+    cv_means = []
+
+    for lam in lambdas:
+        kfold_mses = []
+        for train_idx, val_idx in kf.split(x):
+            x_train_cv, x_val = x[train_idx], x[val_idx]
+            y_train_cv, y_val = y[train_idx], y[val_idx]
+
+            if method == 'ridge':
+                base = Ridge(alpha=lam, fit_intercept=True, 
+                max_iter=300_000, 
+                tol=1e-3)
+            elif method == "lasso":
+                base = Lasso(alpha=lam, 
+                fit_intercept=True, 
+                max_iter=2_000_000, 
+                tol=5e-3, 
+                selection="cyclic")
+            else:
+                raise ValueError("method must be 'ridge' or 'lasso'")
+            
+            model = make_pipeline(PolynomialFeatures(degree, include_bias=False), 
+            StandardScaler(),
+            base)
+
+            model.fit(x_train_cv.reshape(-1,1), y_train_cv)
+            pred_vals = model.predict(x_val.reshape(-1,1)).ravel()
+            kfold_mses.append(mse(y_val, pred_vals))
+
+        cv_means.append(np.mean(kfold_mses))
+
+    cv_means = np.array(cv_means)
+    best_idx = int(np.argmin(cv_means))
+
+    return {
+        "lambdas": np.array(lambdas, dtype=float),
+        "cv_mse": cv_means,
+        "best_lambda": float(lambdas[best_idx]),
+        "best_mse": float(cv_means[best_idx])
+    }
