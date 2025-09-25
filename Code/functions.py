@@ -47,7 +47,7 @@ def make_data(n, seed=seed):
 
 """
 How to use:
-(train, test, full) = make_dataset(n_points)
+(train, test, full) = make_data(n_points)
 x_train, y_train = train
 x_test, y_test = test
 x_all, y_all, y_all_clean = full 
