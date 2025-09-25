@@ -106,7 +106,7 @@ def OLS_results(n_vals, p_vals):
         which are functions from sklearn module.
     - `StandardScaler` is used without mean centering (`with_mean=False`) since the model is fitted without intercept.
     '''
-    
+
     results = []
 
     for n in n_vals:
@@ -197,6 +197,45 @@ def plot_OLS_results(df_OLS, n, p):
 
 # --- Part b) ---
 def Ridge_results(n_vals, p_vals, lambdas):
+    '''
+    Perform Ridge regression on the Runge function
+    for multiple dataset sizes, penalization parameter and polynomial degrees, and return evaluation results.
+
+    Parameters
+    ----------
+    n_vals : np.ndarray
+        A list of integers specifying the number of data points to generate for each dataset.
+    p_vals : np.ndarray
+        A list of integers specifying the polynomial degrees to fit using OLS.
+    lambdas: np.ndarray
+        A list of floats specifying the penalization parameter for Ridge.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing the results for each combination of dataset size and polynomial degree,
+        with the following columns:
+        - 'n': Number of data points.
+        - 'p': Polynomial degree used in Ridge.
+        - 'lambda': Hyperparameter for Ridge
+        - 'theta': Coefficients of the fitted polynomial model.
+        - 'MSE': Mean squared error on the test set.
+        - 'R2': R-squared score on the test set.
+        - 'y_pred': Predicted values on the test set.
+        - 'y_test': True values on the test set.
+        - 'y_train': Training set target values.
+        - 'y_all': Full dataset target values (including noise).
+        - 'x_test': Test set input features.
+        - 'x_train': Training set input features.
+        - 'x_all': Full dataset input features.
+
+    Notes
+    -----
+    - The function uses `make_data(n)` to generate a dataset of size `n` from the Runge function.
+    - Ridge is performed via a pipeline of `PolynomialFeatures`, `StandardScaler`, and `LinearRegression`,
+        which are functions from sklearn module.
+    - `StandardScaler` is used without mean centering (`with_mean=False`) since the model is fitted without intercept.
+    '''
     results = []
 
     for n in n_vals:
