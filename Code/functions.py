@@ -74,9 +74,9 @@ def OLS_results(n_vals, p_vals):
 
     for n in n_vals:
         train, test, full = make_data(n)  # making a dataset with size n
-        x_train, y_train = train
-        x_test, y_test = test
-        x_all, y_all, y_all_clean = full
+        x_train, y_train = train  # training data
+        x_test, y_test = test  # test data
+        x_all, y_all, y_all_clean = full  # actual data
 
         x_train = x_train.reshape(-1, 1)
         x_test = x_test.reshape(-1, 1)
@@ -109,17 +109,57 @@ def OLS_results(n_vals, p_vals):
                 'p': p,
                 'theta': theta,
                 'MSE': mse,
-                'R2': r2
+                'R2': r2,
+                'y_pred': y_pred,
+                'y_test': y_test,
+                'y_train': y_train,
+                'y_all': y_all,
+                'x_test': x_test,
+                'x_train': x_train,
+                'x_all': x_all
             })
 
     df_OLS = pd.DataFrame(results)
 
     return df_OLS
 
+def plot_OLS_results(df_OLS, n, p):
+    """
+    Plot the OLS results for a specific number of datapoints 'n' and polynomial degree `p`.
+    """
+    row = df_OLS[(df_OLS['n'] == n) & (df_OLS['p'] == p)].iloc[0]
+
+    x_train = row['x_train']
+    y_train = row['y_train']
+    x_test = row['x_test']
+    y_test = row['y_test']
+    x_all = row['x_all']
+    y_all = row['y_all']
+    y_pred = row['y_pred']
+
+    plt.figure(figsize=(8, 5))
+
+    # Plot actual data
+    plt.scatter(x_all, y_all, s=6, label='Actual data')
+
+    # Plot training data
+    plt.scatter(x_train, y_train, s=6, label='Training data')
+
+    # Plot test data
+    plt.scatter(x_test, y_test, s=6, label='Test data')
+
+    # Plot model prediction on test data
+    plt.scatter(x_test, y_pred, s=6, label='Predicted (test)')
+
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.title(f'OLS Polynomial Regression (n={n}, p={p})')
+    plt.legend()
+    plt.show()
+
 
 # --- Part b) ---
 def Ridge_results(n_vals, p_vals, lambdas):
-
     results = []
 
     for n in n_vals:
@@ -154,12 +194,52 @@ def Ridge_results(n_vals, p_vals, lambdas):
                     'lambda': l, 
                     'theta': theta,
                     'MSE': mse,
-                    'R2': r2
+                    'R2': r2,
+                    'y_pred': y_pred,
+                    'y_test': y_test,
+                    'y_train': y_train,
+                    'y_all': y_all,
+                    'x_test': x_test,
+                    'x_train': x_train,
+                    'x_all': x_all
                 })
 
     df_Ridge = pd.DataFrame(results)
-
     return df_Ridge
+
+def plot_Ridge_results(df_Ridge, n, p, l):
+    '''
+    Plot Ridge regression results for specific number of data points 'n', polynomial degree 'p', and lambda 'l'.
+    '''
+    row = df_Ridge[(df_Ridge['n'] == n) & (df_Ridge['p'] == p) & (df_Ridge['lambda'] == l)].iloc[0]
+
+    x_train = row['x_train']
+    y_train = row['y_train']
+    x_test = row['x_test']
+    y_test = row['y_test']
+    x_all = row['x_all']
+    y_all = row['y_all']
+    y_pred = row['y_pred']
+
+    plt.figure(figsize=(8, 5))
+
+    # Plot actual data
+    plt.scatter(x_all, y_all, s=6, label='Actual data')
+
+    # Plot training data
+    plt.scatter(x_train, y_train, s=6, label='Training data')
+
+    # Plot test data
+    plt.scatter(x_test, y_test, s=6, label='Test data')
+
+    # Plot predicted test values
+    plt.scatter(x_test, y_pred, s=6, label='Predicted (test)')
+
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.title(rf'Ridge Regression (n={n}, p={p}, $\lambda$={l:.2e})')
+    plt.legend()
+    plt.show()
 
 
 # --- Part c) ---
