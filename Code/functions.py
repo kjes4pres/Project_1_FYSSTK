@@ -23,14 +23,14 @@ from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.linear_model import Lasso
 
-np.random.seed(2018)
+seed = np.random.seed(2018)
 
 # --- General functions ---
 #Definere runge
 def f_true(x):   
     return 1.0 / (1.0 + 25.0 * x**2)  # Runge-lignende funksjon
 
-def make_data(n, seed=np.random.seed(2018)):        
+def make_data(n, seed=seed):        
     x = np.linspace(-1, 1, n)   
 
     y_clean = f_true(x)    
