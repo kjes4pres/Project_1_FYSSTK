@@ -21,9 +21,9 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import Lasso
 
-np.random.seed(2018)
+seed = np.random.seed(2018)
 
 # --- General functions ---
 #Definere runge
@@ -318,46 +318,46 @@ def kfold_cv_mse_ols(degree, k, x, y, seed=seed):
 #K-fold cross-validation for ridge, lasso
 
     def cv_for_methods(method, degree, lambdas, k, x, y, seed=seed):
-    x = np.asarray(x); y = np.asarray(y)
+        x = np.asarray(x); y = np.asarray(y)
 
-    kf = KFold(n_splits=k, shuffle=True, random_state=seed)
-    cv_means = []
+        kf = KFold(n_splits=k, shuffle=True, random_state=seed)
+        cv_means = []
 
-    for lam in lambdas:
-        kfold_mses = []
-        for train_idx, val_idx in kf.split(x):
-            x_train_cv, x_val = x[train_idx], x[val_idx]
-            y_train_cv, y_val = y[train_idx], y[val_idx]
+        for lam in lambdas:
+            kfold_mses = []
+            for train_idx, val_idx in kf.split(x):
+                x_train_cv, x_val = x[train_idx], x[val_idx]
+                y_train_cv, y_val = y[train_idx], y[val_idx]
 
-            if method == 'ridge':
-                base = Ridge(alpha=lam, fit_intercept=True, 
-                max_iter=300_000, 
-                tol=1e-3)
-            elif method == "lasso":
-                base = Lasso(alpha=lam, 
-                fit_intercept=True, 
-                max_iter=2_000_000, 
-                tol=5e-3, 
-                selection="cyclic")
-            else:
-                raise ValueError("method must be 'ridge' or 'lasso'")
+                if method == 'ridge':
+                    base = Ridge(alpha=lam, fit_intercept=True, 
+                    max_iter=300_000, 
+                    tol=1e-3)
+                elif method == "lasso":
+                    base = Lasso(alpha=lam, 
+                    fit_intercept=True, 
+                    max_iter=2_000_000, 
+                    tol=5e-3, 
+                    selection="cyclic")
+                else:
+                    raise ValueError("method must be 'ridge' or 'lasso'")
             
-            model = make_pipeline(PolynomialFeatures(degree, include_bias=False), 
-            StandardScaler(),
-            base)
+                model = make_pipeline(PolynomialFeatures(degree, include_bias=False), 
+                StandardScaler(),
+                base)
 
-            model.fit(x_train_cv.reshape(-1,1), y_train_cv)
-            pred_vals = model.predict(x_val.reshape(-1,1)).ravel()
-            kfold_mses.append(mse(y_val, pred_vals))
+                model.fit(x_train_cv.reshape(-1,1), y_train_cv)
+                pred_vals = model.predict(x_val.reshape(-1,1)).ravel()
+                kfold_mses.append(mse(y_val, pred_vals))
 
-        cv_means.append(np.mean(kfold_mses))
+            cv_means.append(np.mean(kfold_mses))
 
-    cv_means = np.array(cv_means)
-    best_idx = int(np.argmin(cv_means))
+        cv_means = np.array(cv_means)
+        best_idx = int(np.argmin(cv_means))
 
-    return {
-        "lambdas": np.array(lambdas, dtype=float),
-        "cv_mse": cv_means,
-        "best_lambda": float(lambdas[best_idx]),
-        "best_mse": float(cv_means[best_idx])
-    }
+        return {
+            "lambdas": np.array(lambdas, dtype=float),
+            "cv_mse": cv_means,
+            "best_lambda": float(lambdas[best_idx]),
+            "best_mse": float(cv_means[best_idx])
+        }
