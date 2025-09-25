@@ -154,8 +154,8 @@ def ols_gradient(X, y, beta):
 def ridge_gradient(X, y, beta, lambda_):
     return (2/len(y)) * (X.T @ (X @ beta - y)) + 2 * lambda_ * beta
 
-def lasso_gradient(X,y,beta,lmbd,n):
-    return (2/n)*X.T @(X @ beta - y) + np.sign(beta) * lmbd
+def lasso_gradient(X,y,beta,lmbd):
+    return (2/len(y))*X.T @(X @ beta - y) + np.sign(beta) * lmbd
 
 def gradient_descent_ols(X, y, learning_rate=0.01, n_iterations=1000, tol=1e-6, use_tol=False):
     n_samples, n_features = X.shape
@@ -201,7 +201,7 @@ def gradient_descent_advanced(X, y, method='gd', lr_method='ols', learning_rate=
         elif lr_method == 'ridge':
             gradient = ridge_gradient(X, y, theta, lambda_=lambda_)
         elif lr_method == "lasso":
-            gradient = lasso_gradient(X,y, theta, lambda_, n_samples)
+            gradient = lasso_gradient(X,y, theta, lambda_)
         else:
             raise ValueError("Unknown linear regression method")
         if method == 'momentum':
