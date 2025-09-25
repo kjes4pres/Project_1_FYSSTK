@@ -27,11 +27,11 @@ from sklearn.linear_model import Lasso
 import matplotlib.style as mplstyle
 mplstyle.use(['ggplot', 'fast'])
 
-plt.rcParams.update({
-    "text.usetex": True,       
-    "font.family": "serif",    
-    "font.size": 10, 
-})
+# plt.rcParams.update({
+#     "text.usetex": True,       
+#     "font.family": "serif",    
+#     "font.size": 10, 
+# })
 
 
 # For reproducibility
@@ -68,6 +68,44 @@ def make_data(n, seed=seed):
     return train, test, full
 
 
+# Jeg la inn disse fordi jeg må ha de analytiske og sammenligne, men kanskje jeg bør bytte?
+
+def MSE(y_data, y_pred):
+    ''' 
+    Mean square error
+    '''
+    mse = np.mean((y_data - y_pred)**2)
+
+    return mse
+
+def R2(y_data, y_pred):
+    '''
+    R^2 score
+    '''
+    numerator = np.sum((y_data - y_pred)**2)
+    denumerator = np.sum((y_data - np.mean(y_data))**2)
+
+    if denumerator == 0:
+        r2 = np.nan
+    else:
+        r2 = 1 - numerator/denumerator
+    
+    return r2
+
+def OLS_parameters(X, y):
+    ''' 
+    Find the OLS parameters
+    '''
+    return np.linalg.pinv(X) @ y
+
+def Ridge_parameters(X, y, lamb=0.01):
+    '''
+    Doc string kommer...
+    '''
+    # Assumes X is scaled and has no intercept column
+    I = np.eye(np.shape(X.T @ X)[0])
+    
+    return np.linalg.inv(X.T @ X + lamb*I) @ X.T @ y
 
 # --- Part a) ---
 def OLS_results(n_vals, p_vals):
@@ -417,10 +455,9 @@ def gradient_descent_advanced(X, y, method='gd', lr_method='ols', learning_rate=
 
 
 # --- Part f) ---
-def stochastic_gradient_descent_advanced(X, y, method='gd', lr_method='ols', learning_rate=0.01, n_iterations=1000, tol=1e-6, use_tol=False, beta=0.9, epsilon=1e-8, lambda_=0.01):
+def stochastic_gradient_descent_advanced(X, y, method='gd', lr_method='ols', learning_rate=0.01, n_iterations=1000, tol=1e-6, use_tol=False, beta=0.9, epsilon=1e-8, lambda_=0.01, batch_size = 10):
     n_samples, n_features = X.shape
     theta = np.zeros(n_features)
-    batch_size = 10
     cost_history = []   
     m = np.zeros(n_features)  # For momentum and Adam
     v = np.zeros(n_features)  # For Adam 
