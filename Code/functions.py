@@ -23,6 +23,16 @@ from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.linear_model import Lasso
 
+import matplotlib.style as mplstyle
+mplstyle.use(['ggplot', 'fast'])
+
+plt.rcParams.update({
+    "text.usetex": True,       
+    "font.family": "serif",    
+    "font.size": 10, 
+})
+
+
 # For reproducibility
 np.random.seed(2018)
 seed = np.random.seed(2018)
