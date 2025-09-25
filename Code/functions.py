@@ -120,9 +120,90 @@ def Ridge_parameters(X, y, lamb=0.01):
 
 # --- Part c) ---
 
+def ols_gradient(X, y, beta):
+    return (2/len(y)) * (X.T @ (X @ beta - y))
+
+def ridge_gradient(X, y, beta, lambda_):
+    return (2/len(y)) * (X.T @ (X @ beta - y)) + 2 * lambda_ * beta
+
+def gradient_descent_ols(X, y, learning_rate=0.01, n_iterations=1000, tol=1e-6, use_tol=False):
+    n_samples, n_features = X.shape
+    theta = np.zeros(n_features)
+    cost_history = []
+    for i in range(n_iterations):
+        gradient = ols_gradient(X, y, theta)
+        theta -= learning_rate * gradient
+        # cost is the OLS cost function
+        cost = (1/n_samples) * np.sum((X @ theta - y)**2)
+        cost_history.append(cost)
+        if use_tol and i > 0 and abs(cost_history[-2] - cost) < tol:
+            print(f"Converged after {i} iterations.")
+            break
+    return theta, cost_history
+
+def gradient_descent_ridge(X, y, alpha, learning_rate=0.01, n_iterations=1000, tol=1e-6, use_tol=False):
+    n_samples, n_features = X.shape
+    theta = np.zeros(n_features)
+    cost_history = []
+    for i in range(n_iterations):
+        gradient = ridge_gradient(X, y, theta, alpha)
+        theta -= learning_rate * gradient
+        # cost is the Ridge cost function, including the regularization term
+        cost = (1/n_samples) * np.sum((X @ theta - y)**2) + alpha * np.sum(theta**2)
+        cost_history.append(cost)
+        if use_tol and i > 0 and abs(cost_history[-2] - cost) < tol:
+            print(f"Converged after {i} iterations.")
+            break
+    return theta, cost_history
 
 # --- Part d) ---
 
+def gradient_descent_advanced(X, y, method='gd', lr_method='ols', learning_rate=0.01, n_iterations=1000, tol=1e-6, use_tol=False, beta=0.9, epsilon=1e-8, lambda_=0.01):
+    n_samples, n_features = X.shape
+    theta = np.zeros(n_features)
+    cost_history = []   
+    m = np.zeros(n_features)  # For momentum and Adam
+    v = np.zeros(n_features)  # For Adam 
+    for i in range(n_iterations):
+        if lr_method == 'ols':
+            gradient = ols_gradient(X, y, theta)
+        elif lr_method == 'ridge':
+            gradient = ridge_gradient(X, y, theta, lambda_=lambda_)
+        else:
+            raise ValueError("Unknown linear regression method")
+        if method == 'momentum':
+            m = beta * m + (1 - beta) * gradient
+            gradient = m
+        elif method == 'adagrad':
+            v += gradient**2
+            adjusted_lr = learning_rate / (np.sqrt(v) + epsilon)
+            gradient = adjusted_lr * gradient
+        elif method == 'rmsprop':
+            v = beta * v + (1 - beta) * gradient**2
+            adjusted_lr = learning_rate / (np.sqrt(v) + epsilon)
+            gradient = adjusted_lr * gradient
+        elif method == 'adam':
+            m = beta * m + (1 - beta) * gradient
+            v = beta * v + (1 - beta) * (gradient**2)
+            m_hat = m / (1 - beta**(i+1))
+            v_hat = v / (1 - beta**(i+1))
+            adjusted_lr = learning_rate / (np.sqrt(v_hat) + epsilon)
+            gradient = adjusted_lr * m_hat
+        elif method == 'gd':
+            # For GD, do nothing
+            pass
+        else:
+            raise ValueError("Unknown optimization method")
+        theta -= learning_rate * gradient
+        if lr_method == 'ols':
+            cost = (1/n_samples) * np.sum((X @ theta - y)**2)
+        elif lr_method == 'ridge':
+            cost = (1/n_samples) * np.sum((X @ theta - y)**2) + lambda_ * np.sum(theta**2)
+        cost_history.append(cost)
+        if use_tol and i > 0 and abs(cost_history[-2] - cost) < tol:
+            print(f"{method} converged after {i} iterations.")
+            break
+    return theta, cost_history
 
 # --- Part e) ---
 
