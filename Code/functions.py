@@ -30,7 +30,7 @@ np.random.seed(2018)
 def f_true(x):   
     return 1.0 / (1.0 + 25.0 * x**2)  # Runge-lignende funksjon
 
-def make_data(n, seed=seed):        
+def make_data(n, seed=np.random.seed(2018)):        
     x = np.linspace(-1, 1, n)   
 
     y_clean = f_true(x)    
