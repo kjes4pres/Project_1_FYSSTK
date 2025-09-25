@@ -21,6 +21,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error as mse
 from sklearn.linear_model import Lasso
 
 import matplotlib.style as mplstyle
