@@ -23,6 +23,8 @@ from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.linear_model import Lasso
 
+# For reproducibility
+np.random.seed(2018)
 seed = np.random.seed(2018)
 
 # --- General functions ---
