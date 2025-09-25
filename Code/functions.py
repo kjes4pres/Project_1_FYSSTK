@@ -28,11 +28,20 @@ np.random.seed(2018)
 seed = np.random.seed(2018)
 
 # --- General functions ---
-#Definere runge
-def f_true(x):   
+
+def f_true(x): 
+    '''
+    Return 1D Runge function
+    '''  
     return 1.0 / (1.0 + 25.0 * x**2)  # Runge-lignende funksjon
 
-def make_data(n, seed=seed):        
+def make_data(n, seed=seed):     
+    '''
+    Makes a data set of length n over the Runge function
+    for x in (-1, 1).
+
+    Creates train and test data sets
+    '''
     x = np.linspace(-1, 1, n)   
 
     y_clean = f_true(x)    
@@ -47,105 +56,100 @@ def make_data(n, seed=seed):
     full  = (x, y, y_clean)
     return train, test, full
 
-"""
-How to use:
-(train, test, full) = make_data(n_points)
-x_train, y_train = train
-x_test, y_test = test
-x_all, y_all, y_all_clean = full 
-"""
-
-def polynomial_features(x, p, intercept=True):
-    '''
-    Generate a design matrix X.
-
-    Parameters:
-        x: dataset
-        p: number of features
-        intercept: adds a column of intercept if set to True
-
-    Returns:
-        X: design matrix with dimensions
-             (n, p) if intercept=False or (n, p+1) if intercept=True
-    '''
-    n = len(x)
-
-    if intercept:
-        X = np.zeros((n, p + 1))
-        X[:, 0] = 1  # adds intercept
-        for i in range(1, p + 1):
-            X[:, i] = x ** i
-    else:
-        X = np.zeros((n, p))
-        for i in range(0, p):
-            X[:, i] = x ** (i + 1)
-
-    return X 
-
-def standardize(X, y):
-    '''
-    Scale and standardize a design matrix X and data y.
-
-    Parameters:
-        X: np.ndarray
-        y: np.ndarray
-    
-    Returns:
-        X_norm: np.ndarray
-        y_centered: np.ndarray
-        
-    '''
-    X_mean = X.mean(axis=0) # The mean of each column/feature
-    X_std = X.std(axis=0)
-    X_std[X_std == 0] = 1  # safeguard to avoid division by zero for constant features
-    X_norm = (X - X_mean) / X_std
-
-    # Center the target to zero mean
-    y_mean = y.mean()
-    y_centered = y - y_mean
-
-    return X_norm, y_centered
-
-def MSE(y_data, y_pred):
-    ''' 
-    Mean square error
-    '''
-    mse = np.mean((y_data - y_pred)**2)
-
-    return mse
-
-def R2(y_data, y_pred):
-    '''
-    R^2 score
-    '''
-    numerator = np.sum((y_data - y_pred)**2)
-    denumerator = np.sum((y_data - np.mean(y_data))**2)
-
-    if denumerator == 0:
-        r2 = np.nan
-    else:
-        r2 = 1 - numerator/denumerator
-    
-    return r2
                    
 
 # --- Part a) ---
-def OLS_parameters(X, y):
-    ''' 
-    Find the OLS parameters
-    '''
-    return np.linalg.pinv(X) @ y
+def OLS_results(n_vals, p_vals):
+    results = []
+
+    for n in n_vals:
+        train, test, full = make_data(n)  # making a dataset with size n
+        x_train, y_train = train
+        x_test, y_test = test
+        x_all, y_all, y_all_clean = full
+
+        x_train = x_train.reshape(-1, 1)
+        x_test = x_test.reshape(-1, 1)
+        x_all = x_all.reshape(-1, 1)
+
+        # making an OLS model for a given polynomial degree, p
+        for p in p_vals:
+            model = make_pipeline(
+                PolynomialFeatures(degree=p, include_bias=False),
+                StandardScaler(with_mean=False),
+                LinearRegression(fit_intercept=False)
+            )
+        
+            # using the training data to train the model
+            model.fit(x_train, y_train)
+
+            # using the test data to make a prediction, unsee data for the model
+            y_pred = model.predict(x_test)
+        
+            # assessing the model with scores
+            mse = mean_squared_error(y_test, y_pred)
+            r2 = r2_score(y_test, y_pred)
+
+            # extracting the model features
+            theta = model.named_steps['linearregression'].coef_
+        
+            # saving the results in a pandas dataframe
+            results.append({
+                'n': n,
+                'p': p,
+                'theta': theta,
+                'MSE': mse,
+                'R2': r2
+            })
+
+    df_OLS = pd.DataFrame(results)
+
+    return df_OLS
 
 
 # --- Part b) ---
-def Ridge_parameters(X, y, lamb=0.01):
-    '''
-    Doc string kommer...
-    '''
-    # Assumes X is scaled and has no intercept column
-    I = np.eye(np.shape(X.T @ X)[0])
-    
-    return np.linalg.inv(X.T @ X + lamb*I) @ X.T @ y
+def Ridge_results(n_vals, p_vals, lambdas):
+
+    results = []
+
+    for n in n_vals:
+        train, test, full = make_data(n)  # making a dataset with size n
+        x_train, y_train = train
+        x_test, y_test = test
+        x_all, y_all, y_all_clean = full
+
+        x_train = x_train.reshape(-1, 1)
+        x_test = x_test.reshape(-1, 1)
+        x_all = x_all.reshape(-1, 1)
+
+        for p in p_vals:
+            for l in lambdas:
+                model = make_pipeline(
+                    PolynomialFeatures(degree=p, include_bias=False),
+                    StandardScaler(with_mean=False),
+                    Ridge(alpha=l, fit_intercept=False)
+                )
+        
+                model.fit(x_train, y_train)
+                y_pred = model.predict(x_test)
+
+                mse = mean_squared_error(y_test, y_pred)
+                r2 = r2_score(y_test, y_pred)
+
+                theta = model.named_steps['ridge'].coef_
+
+                results.append({
+                    'n': n,
+                    'p': p,
+                    'lambda': l, 
+                    'theta': theta,
+                    'MSE': mse,
+                    'R2': r2
+                })
+
+    df_Ridge = pd.DataFrame(results)
+
+    return df_Ridge
 
 
 # --- Part c) ---
