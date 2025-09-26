@@ -23,6 +23,7 @@ from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.metrics import mean_squared_error as mse
 from sklearn.linear_model import Lasso
+from sklearn.model_selection import KFold
 
 import matplotlib.style as mplstyle
 mplstyle.use(['ggplot', 'fast'])
