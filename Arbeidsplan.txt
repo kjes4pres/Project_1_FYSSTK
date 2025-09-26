@@ -30,7 +30,7 @@ OBS! Når du bruker ggplot så er grid default, så om du skriver plt.grid() kom
 
 ---Rekkefølge:---
 1) Train test split sklearn
-2) Polynomial features på test set only
+2) Polynomial features på train set only
 3) Skaler med sklearn 
 
 ---Ønskede resultat fra oppgavene:---
