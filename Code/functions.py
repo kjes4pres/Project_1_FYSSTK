@@ -170,11 +170,16 @@ def OLS_results(n_vals, p_vals):
             model.fit(x_train, y_train)
 
             # using the test data to make a prediction, unsee data for the model
-            y_pred = model.predict(x_test)
+            y_pred_test = model.predict(x_test)
+            y_pred_train = model.predict(x_train)
         
             # assessing the model with scores
-            mse = mean_squared_error(y_test, y_pred)
-            r2 = r2_score(y_test, y_pred)
+            mse_test = mean_squared_error(y_test, y_pred_test)
+            r2_test = r2_score(y_test, y_pred_test)
+
+            mse_train = mean_squared_error(y_train, y_pred_train)
+            r2_train = r2_score(y_train, y_pred_train)
+
 
             # extracting the model features
             theta = model.named_steps['linearregression'].coef_
@@ -184,9 +189,12 @@ def OLS_results(n_vals, p_vals):
                 'n': n,
                 'p': p,
                 'theta': theta,
-                'MSE': mse,
-                'R2': r2,
-                'y_pred': y_pred,
+                'MSE_test': mse_test,
+                'R2_test': r2_test,
+                'MSE_train': mse_train,
+                'R2_train': r2_train,
+                'y_pred_test': y_pred_test,
+                'y_pred_train': y_pred_train,
                 'y_test': y_test,
                 'y_train': y_train,
                 'y_all': y_all,
@@ -211,7 +219,8 @@ def plot_OLS_results(df_OLS, n, p):
     y_test = row['y_test']
     x_all = row['x_all']
     y_all = row['y_all']
-    y_pred = row['y_pred']
+    y_pred_test = row['y_pred_test']
+    y_pred_train = row['y_pred_train']
 
     plt.figure(figsize=(8, 5))
 
@@ -225,7 +234,10 @@ def plot_OLS_results(df_OLS, n, p):
     plt.scatter(x_test, y_test, s=6, label='Test data')
 
     # Plot model prediction on test data
-    plt.scatter(x_test, y_pred, s=6, label='Predicted (test)')
+    plt.scatter(x_test, y_pred_test, s=6, label='Predicted (test)')
+
+    # Plot model prediction on test data
+    plt.scatter(x_train, y_pred_train, s=6, label='Predicted (train)')
 
     plt.xlabel('x')
     plt.ylabel('y')
