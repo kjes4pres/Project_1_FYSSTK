@@ -162,7 +162,7 @@ def OLS_results(n_vals, p_vals):
         # making an OLS model for a given polynomial degree, p
         for p in p_vals:
             model = make_pipeline(
-                PolynomialFeatures(degree=p, include_bias=False),
+                PolynomialFeatures(degree=p, include_bias=True),
                 StandardScaler(with_mean=False),
                 LinearRegression(fit_intercept=False)
             )
@@ -303,7 +303,7 @@ def Ridge_results(n_vals, p_vals, lambdas):
         for p in p_vals:
             for l in lambdas:
                 model = make_pipeline(
-                    PolynomialFeatures(degree=p, include_bias=False),
+                    PolynomialFeatures(degree=p, include_bias=True),
                     StandardScaler(with_mean=False),
                     Ridge(alpha=l, fit_intercept=False)
                 )
