@@ -3,7 +3,7 @@ Functions for project 1, FYS-STK4155
 
 Authors:
 - Kjersti Stangeland
-- Ingvild Olden Bjerklund
+- Ingvild Olden Bjerkelund
 - Jenny Guldvog
 - Sverre Johansen
 
