@@ -56,7 +56,7 @@ def make_data(n, seed=seed):
     x = np.linspace(-1, 1, n)   
 
     y_clean = f_true(x)    
-    y = y_clean + np.random.normal(0, 1)
+    y = y_clean + np.random.normal(0, 1, n)
 
     x_train, x_test, y_train, y_test = train_test_split(
         x, y, test_size=0.2, random_state=seed, shuffle=True
