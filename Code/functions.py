@@ -287,8 +287,99 @@ def Ridge_parameters(X, y, lamb, intercept=True):
     else:
         I = np.eye(np.shape(X.T @ X)[0])
         params = np.linalg.inv(X.T @ X + lamb * I) @ X.T @ y
-        
+
     return params
+
+def Ridge_various_poly_deg(n, lamb, p_vals):
+    results = []
+    # Making the data and splitting into test/train
+    train, test, full = make_data(n)  # making a dataset with size n
+    x_train, y_train = train  # training data
+    x_test, y_test = test  # test data
+    x_all, y_all, y_all_clean = full  # full data
+
+    x_train = x_train.reshape(-1, 1)
+    x_test = x_test.reshape(-1, 1)
+    x_all = x_all.reshape(-1, 1)
+
+    # Scaling the full data, the training and the test set separately
+    x_train_s = my_scaler(x_train)
+    x_test_s = my_scaler(x_test)
+    x_all_s = my_scaler(x_all)
+
+    for p in p_vals:
+        # Making a design matrix based of the scaled data
+        X_train = polynomial_features(x_train_s, p, intercept=True)
+        X_test = polynomial_features(x_test_s, p, intercept=True)
+
+        # Finding the OLS parameters from the training data
+        theta = Ridge_parameters(X_train, y_train, lamb, intercept=True)
+
+        # Prediciting
+        y_pred_test = X_test @ theta
+        y_pred_train = X_train @ theta
+
+        # assessing the model with scores
+        mse_test = MSE(y_test, y_pred_test)
+        r2_test = R2(y_test, y_pred_test)
+
+        mse_train = MSE(y_train, y_pred_train)
+        r2_train = R2(y_train, y_pred_train)
+
+        # saving the results in a pandas dataframe
+        results.append({
+            'p': p,
+            'theta': theta,
+            'MSE_test': mse_test,
+            'R2_test': r2_test,
+            'MSE_train': mse_train,
+            'R2_train': r2_train,
+            'y_pred_test': y_pred_test,
+            'y_pred_train': y_pred_train,
+            'y_test': y_test,
+            'y_train': y_train,
+            'y_all': y_all,
+            'x_test': x_test_s,
+            'x_train': x_train_s,
+            'x_all': x_all_s
+            })
+
+    df_Ridge = pd.DataFrame(results)
+
+    return df_Ridge
+
+def plot_Ridge_results(df_Ridge, p, n, lamb):
+    """
+    Plot the Ridge results for a specific number of datapoints 'n' and polynomial degree `p`.
+    """
+    row = df_Ridge[(df_Ridge['p'] == p)].iloc[0]
+
+    x_train = row['x_train']
+    y_train = row['y_train']
+    x_test = row['x_test']
+    y_test = row['y_test']
+    y_pred_test = row['y_pred_test']
+    y_pred_train = row['y_pred_train']
+
+    plt.figure(figsize=(8, 5))
+
+    # Plot training data
+    plt.scatter(x_train, y_train, s=6, label='Training data')
+
+    # Plot test data
+    plt.scatter(x_test, y_test, s=6, label='Test data')
+
+    # Plot model prediction on test data
+    plt.scatter(x_test, y_pred_test, s=6, label='Predicted (test)')
+
+    # Plot model prediction on test data
+    plt.scatter(x_train, y_pred_train, s=6, label='Predicted (train)')
+
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.title(rf'Ridge Polynomial Regression (n={n}, $\lambda$ = {lamb}, p={p})')
+    plt.legend()
+    plt.show()
 
 # --- Part c) ---
 
