@@ -277,11 +277,18 @@ def OLS_various_n_data(p, n_vals):
     return df_OLS
 
 # --- Part b) ---
-def Ridge_parameters(X, y, lamb=0.01):
-    # Assumes X is scaled and has no intercept column
-    I = np.eye(np.shape(X.T @ X)[0])
+def Ridge_parameters(X, y, lamb, intercept=True):
+    if intercept:
+        n_features = X.shape[1]
+        I = np.eye(n_features)
+        I[0, 0] = 0
+        params = np.linalg.inv(X.T @ X + lamb * I) @ X.T @ y
 
-    return np.linalg.inv(X.T @ X + lamb * I) @ X.T @ y
+    else:
+        I = np.eye(np.shape(X.T @ X)[0])
+        params = np.linalg.inv(X.T @ X + lamb * I) @ X.T @ y
+        
+    return params
 
 # --- Part c) ---
 
