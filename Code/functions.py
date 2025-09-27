@@ -99,6 +99,19 @@ def R2(y_data, y_pred):
 
 # --- Part a) ---
 def polynomial_features(x, p, intercept=True):
+    """
+    Creates a design matrix X with p features and n samples.
+    Option to add an intercept (column of ones).
+
+    Inputs:
+        x (np.ndarray): Input data of shape (n, 1), n is the number of samples.
+        p (int): Number of features.
+        intercept (boolean): Optional, if True adds a column of ones.
+
+    Returns:
+        X (np.ndarray): Design matrix of shape (n, p+1) if 'intercept=True',
+        otherwise shape (n, p).
+    """
     n = len(x[:, 0])
 
     if intercept:
@@ -114,6 +127,17 @@ def polynomial_features(x, p, intercept=True):
     return X
 
 def my_scaler(X):
+    """
+    Standarizes a matrix by column.
+
+    Inputs:
+        X (np.ndarray): Matrix of shape (n, p), where `n` is the 
+        number of samples and `p` is the number of features.
+
+    Returns:
+        X_scaled (np.ndarray): Scaled data of shape (n, p),
+        where each column has 0 mean and standard deviation 1.
+    """
     mean = np.mean(X, axis=0)
     std = np.std(X, axis=0)
     std[std == 0] = 1  # avoid division by zero
@@ -123,9 +147,33 @@ def my_scaler(X):
     return X_scaled
 
 def OLS_parameters(X, y):
+    """
+    Computes the optimal parameters for 
+    Ordinary Least Squares (OLS).
+
+    Inputs:
+        X (np.ndarray): Design matrix of shape (n, p), where `n` is the
+        number of samples and `p` is the number of features.
+        y (np.ndarray): Target vector of shape (n).
+
+    Returns:
+        (np.ndarray): Optimal parameters vector of shape (p)
+    """
     return np.linalg.pinv(X) @ y
 
 def OLS_various_poly_deg(n, p_vals):
+    """
+    Performs Ordinary Least Square analysis on
+    the Runge function for a given number of samples
+    and a range of polynomial degrees (features).
+
+    Inputs:
+        n (int): Number of samples
+        p (np.ndarray): List of polynomial degrees.
+
+    Returns:
+        df_OLS (pd.DataFrame): Dataframe containing all results.
+    """
     results = []
     # Making the data and splitting into test/train
     train, test, full = make_data(n)  # making a dataset with size n
@@ -217,6 +265,18 @@ def plot_OLS_results(df_OLS, p, n):
     plt.show()
 
 def OLS_various_n_data(p, n_vals):
+    """
+    Performs Ordinary Least Square analysis on
+    the Runge function for a given polynomial degree
+    and a range of samples (data points).
+
+    Inputs:
+        p (int): Polynomial degree.
+        p (np.ndarray): List of number of samples.
+
+    Returns:
+        df_OLS (pd.DataFrame): Dataframe containing all results.
+    """
     results = []
 
     for n in n_vals:
@@ -278,6 +338,21 @@ def OLS_various_n_data(p, n_vals):
 
 # --- Part b) ---
 def Ridge_parameters(X, y, lamb, intercept=True):
+    """
+    Computes the optimal parameters for 
+    Ridge regression.
+
+    Inputs:
+        X (np.ndarray): Design matrix of shape (n, p), where `n` is the
+        number of samples and `p` is the number of features.
+        y (np.ndarray): Target vector of shape (n).
+        lamb (float): Penalization parameter.
+        intercept (boolean): If True (default), the intercept/bias term
+        (first column of `X`) is not penalized.
+
+    Returns:
+        (np.ndarray): Optimal parameters vector of shape (p)
+    """
     if intercept:
         n_features = X.shape[1]
         I = np.eye(n_features)
@@ -291,6 +366,19 @@ def Ridge_parameters(X, y, lamb, intercept=True):
     return params
 
 def Ridge_various_poly_deg(n, lamb, p_vals):
+    """
+    Performs Ridge regression analysis on
+    the Runge function for a given polynomial degree,
+    a given hyperparameter and for a range of samples (data points).
+
+    Inputs:
+        n (int): Number of samples.
+        lamb (float): Hyperparameter
+        p_vals (np.ndarray): List of polynomial degrees.
+
+    Returns:
+        df_Ridge (pd.DataFrame): Dataframe containing all results.
+    """
     results = []
     # Making the data and splitting into test/train
     train, test, full = make_data(n)  # making a dataset with size n
@@ -382,6 +470,19 @@ def plot_Ridge_results(df_Ridge, p, n, lamb):
     plt.show()
 
 def Ridge_various_lambs(n, p, lambs):
+    """
+    Performs Ridge regression analysis on
+    the Runge function for a given polynomial degree,
+    a given number of samples and for a range of hyperparameters.
+
+    Inputs:
+        n (int): Number of samples.
+        p (int): Polynomial degree.
+        lambs (np.ndarray): List of hyperparameters.
+
+    Returns:
+        df_Ridge (pd.DataFrame): Dataframe containing all results.
+    """
     results = []
     # Making the data and splitting into test/train
     train, test, full = make_data(n)  # making a dataset with size n
