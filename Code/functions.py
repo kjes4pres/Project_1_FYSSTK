@@ -76,7 +76,8 @@ def MSE(y_data, y_pred):
     """
     Mean square error
     """
-    mse = np.mean((y_data - y_pred) ** 2)
+    n = np.size(y_pred)
+    mse = np.mean((y_data - y_pred) ** 2)/n
 
     return mse
 
@@ -96,221 +97,191 @@ def R2(y_data, y_pred):
     return r2
 
 
+# --- Part a) ---
+def polynomial_features(x, p, intercept=True):
+    n = len(x[:, 0])
+
+    if intercept:
+        X = np.zeros((n, p + 1))
+        X[:, 0] = 1
+        for i in range(1, p + 1):
+            X[:, i] = x[:, 0] ** i
+    else:
+        X = np.zeros((n, p))
+        for i in range(0, p):
+            X[:, i] = x[:, 0] ** (i + 1)
+
+    return X
+
+def my_scaler(X):
+    mean = np.mean(X, axis=0)
+    std = np.std(X, axis=0)
+    std[std == 0] = 1  # avoid division by zero
+
+    X_scaled = (X - mean)/std
+
+    return X_scaled
+
 def OLS_parameters(X, y):
-    """
-    Find the OLS parameters
-    """
     return np.linalg.pinv(X) @ y
 
-
-def Ridge_parameters(X, y, lamb=0.01):
-    """
-    Doc string kommer...
-    """
-    # Assumes X is scaled and has no intercept column
-    I = np.eye(np.shape(X.T @ X)[0])
-
-    return np.linalg.inv(X.T @ X + lamb * I) @ X.T @ y
-
-
-# --- Part a) ---
-def OLS_results(n_vals, p_vals):
-    """
-    ...
-    """
+def OLS_various_poly_deg(n, p_vals):
     results = []
+    # Making the data and splitting into test/train
+    train, test, full = make_data(n)  # making a dataset with size n
+    x_train, y_train = train  # training data
+    x_test, y_test = test  # test data
+    x_all, y_all, y_all_clean = full  # full data
 
-    for n in n_vals:
-        train, test, full = make_data(n)  # making a dataset with size n
-        x_train, y_train = train  # training data
-        x_test, y_test = test  # test data
-        x_all, y_all, y_all_clean = full  # actual data
+    x_train = x_train.reshape(-1, 1)
+    x_test = x_test.reshape(-1, 1)
+    x_all = x_all.reshape(-1, 1)
 
-        x_train = x_train.reshape(-1, 1)
-        x_test = x_test.reshape(-1, 1)
-        x_all = x_all.reshape(-1, 1)
+    # Scaling the full data, the training and the test set separately
+    x_train_s = my_scaler(x_train)
+    x_test_s = my_scaler(x_test)
+    x_all_s = my_scaler(x_all)
 
-        # making an OLS model for a given polynomial degree, p
-        for p in p_vals:
-            model = make_pipeline(
-                PolynomialFeatures(degree=p, include_bias=True),
-                StandardScaler(with_mean=False),
-                LinearRegression(fit_intercept=False),
-            )
+    for p in p_vals:
+        # Making a design matrix based of the scaled data
+        X_train = polynomial_features(x_train_s, p, intercept=True)
+        X_test = polynomial_features(x_test_s, p, intercept=True)
 
-            # using the training data to train the model
-            model.fit(x_train, y_train)
+        # Finding the OLS parameters from the training data
+        theta = OLS_parameters(X_train, y_train)
 
-            # using the test data to make a prediction, unsee data for the model
-            y_pred_test = model.predict(x_test)
-            y_pred_train = model.predict(x_train)
+        # Prediciting
+        y_pred_test = X_test @ theta
+        y_pred_train = X_train @ theta
 
-            # assessing the model with scores
-            mse_test = mean_squared_error(y_test, y_pred_test)
-            r2_test = r2_score(y_test, y_pred_test)
+        # assessing the model with scores
+        mse_test = MSE(y_test, y_pred_test)
+        r2_test = R2(y_test, y_pred_test)
 
-            mse_train = mean_squared_error(y_train, y_pred_train)
-            r2_train = r2_score(y_train, y_pred_train)
+        mse_train = MSE(y_train, y_pred_train)
+        r2_train = R2(y_train, y_pred_train)
 
-            # extracting the model features
-            theta = model.named_steps["linearregression"].coef_
-
-            # saving the results in a pandas dataframe
-            results.append(
-                {
-                    "n": n,
-                    "p": p,
-                    "theta": theta,
-                    "MSE_test": mse_test,
-                    "R2_test": r2_test,
-                    "MSE_train": mse_train,
-                    "R2_train": r2_train,
-                    "y_pred_test": y_pred_test,
-                    "y_pred_train": y_pred_train,
-                    "y_test": y_test,
-                    "y_train": y_train,
-                    "y_all": y_all,
-                    "x_test": x_test,
-                    "x_train": x_train,
-                    "x_all": x_all,
-                }
-            )
+        # saving the results in a pandas dataframe
+        results.append({
+            'p': p,
+            'theta': theta,
+            'MSE_test': mse_test,
+            'R2_test': r2_test,
+            'MSE_train': mse_train,
+            'R2_train': r2_train,
+            'y_pred_test': y_pred_test,
+            'y_pred_train': y_pred_train,
+            'y_test': y_test,
+            'y_train': y_train,
+            'y_all': y_all,
+            'x_test': x_test_s,
+            'x_train': x_train_s,
+            'x_all': x_all_s
+            })
 
     df_OLS = pd.DataFrame(results)
 
     return df_OLS
 
-
-def plot_OLS_results(df_OLS, n, p):
+def plot_OLS_results(df_OLS, p, n):
     """
     Plot the OLS results for a specific number of datapoints 'n' and polynomial degree `p`.
     """
-    row = df_OLS[(df_OLS["n"] == n) & (df_OLS["p"] == p)].iloc[0]
+    row = df_OLS[(df_OLS['p'] == p)].iloc[0]
 
-    x_train = row["x_train"]
-    y_train = row["y_train"]
-    x_test = row["x_test"]
-    y_test = row["y_test"]
-    x_all = row["x_all"]
-    y_all = row["y_all"]
-    y_pred_test = row["y_pred_test"]
-    y_pred_train = row["y_pred_train"]
+    x_train = row['x_train']
+    y_train = row['y_train']
+    x_test = row['x_test']
+    y_test = row['y_test']
+    y_pred_test = row['y_pred_test']
+    y_pred_train = row['y_pred_train']
 
     plt.figure(figsize=(8, 5))
 
-    # Plot actual data
-    plt.scatter(x_all, y_all, s=6, label="Actual data")
-
     # Plot training data
-    plt.scatter(x_train, y_train, s=6, label="Training data")
+    plt.scatter(x_train, y_train, s=6, label='Training data')
 
     # Plot test data
-    plt.scatter(x_test, y_test, s=6, label="Test data")
+    plt.scatter(x_test, y_test, s=6, label='Test data')
 
     # Plot model prediction on test data
-    plt.scatter(x_test, y_pred_test, s=6, label="Predicted (test)")
+    plt.scatter(x_test, y_pred_test, s=6, label='Predicted (test)')
 
     # Plot model prediction on test data
-    plt.scatter(x_train, y_pred_train, s=6, label="Predicted (train)")
+    plt.scatter(x_train, y_pred_train, s=6, label='Predicted (train)')
 
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.title(f"OLS Polynomial Regression (n={n}, p={p})")
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.title(f'OLS Polynomial Regression (n={n}, p={p})')
     plt.legend()
     plt.show()
 
-
-# --- Part b) ---
-def Ridge_results(n_vals, p_vals, lambdas):
-    """
-    ...
-    """
+def OLS_various_n_data(p, n_vals):
     results = []
 
     for n in n_vals:
+        # Making the data and splitting into test/train
         train, test, full = make_data(n)  # making a dataset with size n
-        x_train, y_train = train
-        x_test, y_test = test
-        x_all, y_all, y_all_clean = full
+        x_train, y_train = train  # training data
+        x_test, y_test = test  # test data
+        x_all, y_all, y_all_clean = full  # full data
 
         x_train = x_train.reshape(-1, 1)
         x_test = x_test.reshape(-1, 1)
         x_all = x_all.reshape(-1, 1)
 
-        for p in p_vals:
-            for l in lambdas:
-                model = make_pipeline(
-                    PolynomialFeatures(degree=p, include_bias=True),
-                    StandardScaler(with_mean=False),
-                    Ridge(alpha=l, fit_intercept=False),
-                )
+        # Scaling the full data, the training and the test set separately
+        x_train_s = my_scaler(x_train)
+        x_test_s = my_scaler(x_test)
+        x_all_s = my_scaler(x_all)
 
-                model.fit(x_train, y_train)
-                y_pred = model.predict(x_test)
+        
+        # Making a design matrix based of the scaled data
+        X_train = polynomial_features(x_train_s, p, intercept=True)
+        X_test = polynomial_features(x_test_s, p, intercept=True)
 
-                mse = mean_squared_error(y_test, y_pred)
-                r2 = r2_score(y_test, y_pred)
+        # Finding the OLS parameters from the training data
+        theta = OLS_parameters(X_train, y_train)
 
-                theta = model.named_steps["ridge"].coef_
+        # Prediciting
+        y_pred_test = X_test @ theta
+        y_pred_train = X_train @ theta
 
-                results.append(
-                    {
-                        "n": n,
-                        "p": p,
-                        "lambda": l,
-                        "theta": theta,
-                        "MSE": mse,
-                        "R2": r2,
-                        "y_pred": y_pred,
-                        "y_test": y_test,
-                        "y_train": y_train,
-                        "y_all": y_all,
-                        "x_test": x_test,
-                        "x_train": x_train,
-                        "x_all": x_all,
-                    }
-                )
+        # assessing the model with scores
+        mse_test = MSE(y_test, y_pred_test)
+        r2_test = R2(y_test, y_pred_test)
 
-    df_Ridge = pd.DataFrame(results)
-    return df_Ridge
+        mse_train = MSE(y_train, y_pred_train)
+        r2_train = R2(y_train, y_pred_train)
+        
+        # saving the results in a pandas dataframe
+        results.append({
+            'n': n,
+            'theta': theta,
+            'MSE_test': mse_test,
+            'R2_test': r2_test,
+            'MSE_train': mse_train,
+            'R2_train': r2_train,
+            'y_pred_test': y_pred_test,
+            'y_pred_train': y_pred_train,
+            'y_test': y_test,
+            'y_train': y_train,
+            'y_all': y_all,
+            'x_test': x_test,
+            'x_train': x_train,
+            'x_all': x_all
+            })
 
+    df_OLS = pd.DataFrame(results)
 
-def plot_Ridge_results(df_Ridge, n, p, l):
-    """
-    Plot Ridge regression results for specific number of data points 'n', polynomial degree 'p', and lambda 'l'.
-    """
-    row = df_Ridge[
-        (df_Ridge["n"] == n) & (df_Ridge["p"] == p) & (df_Ridge["lambda"] == l)
-    ].iloc[0]
+    return df_OLS
 
-    x_train = row["x_train"]
-    y_train = row["y_train"]
-    x_test = row["x_test"]
-    y_test = row["y_test"]
-    x_all = row["x_all"]
-    y_all = row["y_all"]
-    y_pred = row["y_pred"]
+# --- Part b) ---
+def Ridge_parameters(X, y, lamb=0.01):
+    # Assumes X is scaled and has no intercept column
+    I = np.eye(np.shape(X.T @ X)[0])
 
-    plt.figure(figsize=(8, 5))
-
-    # Plot actual data
-    plt.scatter(x_all, y_all, s=6, label="Actual data")
-
-    # Plot training data
-    plt.scatter(x_train, y_train, s=6, label="Training data")
-
-    # Plot test data
-    plt.scatter(x_test, y_test, s=6, label="Test data")
-
-    # Plot predicted test values
-    plt.scatter(x_test, y_pred, s=6, label="Predicted (test)")
-
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.title(rf"Ridge Regression (n={n}, p={p}, $\lambda$={l:.2e})")
-    plt.legend()
-    plt.show()
-
+    return np.linalg.inv(X.T @ X + lamb * I) @ X.T @ y
 
 # --- Part c) ---
 
