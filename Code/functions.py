@@ -763,18 +763,17 @@ def stochastic_gradient_descent_advanced(
 # --- Part g) ---
 
 
-def ols(x_train, y_train, x_eval, degree):
+def ols_gh(x_train, y_train, x_eval, degree):
     model = make_pipeline(
-        PolynomialFeatures(degree=degree, include_bias=True),
-        LinearRegression(fit_intercept=False),
+        PolynomialFeatures(degree=degree, include_bias=False),
+        StandardScaler(),
+        LinearRegression(fit_intercept=True)
     )
-
     model.fit(x_train.reshape(-1, 1), y_train)
-    y_predicted = model.predict(x_eval.reshape(-1, 1)).ravel()
+    y_pred = model.predict(x_eval.reshape(-1, 1)).ravel()
+    return y_pred, model
 
-    return y_predicted, model
-
-
+"""
 def bootstrap(degrees, x_train, x_test, y_train, y_test, x_grid, boots_reps, seed=seed):
 
     rng = np.random.default_rng(seed)
@@ -822,7 +821,105 @@ def bootstrap(degrees, x_train, x_test, y_train, y_test, x_grid, boots_reps, see
         boot_results[k] = np.array(boot_results[k])
 
     return boot_results
+"""
 
+def bootstrap(
+    degrees, x_train, x_test, y_train, y_test, x_grid, boots_reps, seed=seed,
+    compute_true=True, compute_test=True
+):
+    """
+    Resampler TRAIN, trener modell per bootstrap, evaluerer:
+      - (A) mot f_true(x_grid)  -> *_true (teori-ren)
+      - (B) mot y_test          -> *_test (praktisk ML)
+    Beholder også dine gamle nøkkelnavn for 'true' (bias2_boots, var_boots, mse_boots) for kompatibilitet.
+    """
+    rng = np.random.default_rng(seed)
+    if compute_true:
+        y_true = f_true(x_grid)
+
+    out = {
+        "degree": [],
+        "train_mse": [],
+        "test_mse": [],
+    }
+    if compute_true:
+        out.update({
+            # nye, eksplisitte navn
+            "bias2_boots_true": [],
+            "var_boots_true": [],
+            "mse_boots_true": [],
+            # bakover-kompatible navn (peker på de samme tallene)
+            "bias2_boots": [],
+            "var_boots": [],
+            "mse_boots": [],
+        })
+    if compute_test:
+        out.update({
+            "bias2_boots_test_obs": [],
+            "var_boots_test_pred": [],
+            "mse_boots_test": [],
+        })
+
+    for d in degrees:
+        # 1) Direkte fit (ikke bootstrap)
+        yhat_tr, model = ols_gh(x_train, y_train, x_train, degree=d)
+        yhat_te = model.predict(x_test.reshape(-1, 1)).ravel()
+        out["train_mse"].append(mse(y_train, yhat_tr))
+        out["test_mse"].append(mse(y_test,  yhat_te))
+
+        # 2) Bootstrap-predikasjoner
+        if compute_true:
+            boots_pred_grid = np.empty((boots_reps, x_grid.size), dtype=float)
+        if compute_test:
+            boots_pred_test = np.empty((boots_reps, x_test.size), dtype=float)
+
+        for b in range(boots_reps):
+            idx = rng.choice(x_train.size, size=x_train.size, replace=True)
+            xb, yb = x_train[idx], y_train[idx]
+
+            if compute_true:
+                yb_grid, model_b = ols_gh(xb, yb, x_grid, degree=d)
+                boots_pred_grid[b] = yb_grid
+            else:
+                # tren modellen likevel for test-varianten
+                _, model_b = ols_gh(xb, yb, x_test, degree=d)
+
+            if compute_test:
+                boots_pred_test[b] = model_b.predict(x_test.reshape(-1,1)).ravel()
+
+        # 3) Aggreger mot f_true (teori-ren)
+        if compute_true:
+            mean_g = boots_pred_grid.mean(axis=0)
+            var_g  = boots_pred_grid.var(axis=0, ddof=1)
+            bias2_g = (mean_g - y_true)**2
+            mse_g   = ((boots_pred_grid - y_true[None, :])**2).mean(axis=0)
+
+            # fyll begge navnesett
+            out["bias2_boots_true"].append(bias2_g.mean())
+            out["var_boots_true"].append(var_g.mean())
+            out["mse_boots_true"].append(mse_g.mean())
+
+            out["bias2_boots"].append(bias2_g.mean())
+            out["var_boots"].append(var_g.mean())
+            out["mse_boots"].append(mse_g.mean())
+
+        # 4) Aggreger mot y_test (praktisk ML)
+        if compute_test:
+            mean_t = boots_pred_test.mean(axis=0)
+            var_t  = boots_pred_test.var(axis=0, ddof=1)
+            bias2_obs = (mean_t - y_test)**2      # inkluderer støy
+            mse_t     = ((boots_pred_test - y_test[None, :])**2).mean(axis=0)
+
+            out["bias2_boots_test_obs"].append(bias2_obs.mean())
+            out["var_boots_test_pred"].append(var_t.mean())
+            out["mse_boots_test"].append(mse_t.mean())
+
+        out["degree"].append(d)
+
+    for k in list(out.keys()):
+        out[k] = np.array(out[k])
+
+    return out
 
 # --- Part h) ---
 
@@ -836,7 +933,7 @@ def kfold_cv_mse_ols(degree, k, x, y, seed=seed):
         x_train_cv, x_val = x[train_idx], x[val_idx]
         y_train_cv, y_val = y[train_idx], y[val_idx]
 
-        predicted_val, _ = ols(x_train_cv, y_train_cv, x_val, degree)
+        predicted_val, _ = ols_gh(x_train_cv, y_train_cv, x_val, degree)
         kfold_mses.append(mse(y_val, predicted_val))
 
     return np.mean(kfold_mses)
