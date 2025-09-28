@@ -761,6 +761,9 @@ def stochastic_gradient_descent_advanced(
 
 
 def ols_gh(x_train, y_train, x_eval, degree):
+    """
+    Regular ols from scikit
+    """
     model = make_pipeline(
         PolynomialFeatures(degree=degree, include_bias=False),
         StandardScaler(),
@@ -770,46 +773,45 @@ def ols_gh(x_train, y_train, x_eval, degree):
     y_pred = model.predict(x_eval.reshape(-1, 1)).ravel()
     return y_pred, model
 
-
-
-
-def bootstrap_test_only(degrees, x_train, x_test, y_train, y_test, boots_reps, seed=seed):
+def bootstrap(degrees, x_train, x_test, y_train, y_test, boots_reps, seed=seed):
+    
     rng = np.random.default_rng(seed)
 
     boot_results = {
         "degree": [],
-        "mse_boots_test": [],       # <- MSE på test, bootstrap-aggregert
-        "var_boots_test_pred": [],  # <- prediktiv varians på test
-        "bias2_boots_test_obs": [], # <- (mean_pred − y_test)^2  (observasjons-bias^2)
+        "mse_boots": [],       # <- MSE på test, bootstrap-aggregert
+        "var_boots": [],  # <- prediktiv varians på test
+        "bias2_boots": [], # <- (mean_pred − y_test)^2  (observasjons-bias^2)
         "train_mse": [],
         "test_mse": [],
     }
 
     for d in degrees:
         # 1) én direkte fit (ikke bootstrap) for referanse
-        yhat_tr, model = ols_gh(x_train, y_train, x_train, degree=d)
-        yhat_te = model.predict(x_test.reshape(-1,1)).ravel()
-        boot_results["train_mse"].append(mse(y_train, yhat_tr))
-        boot_results["test_mse"].append(mse(y_test,  yhat_te))
+        yhat_train, model = ols_gh(x_train, y_train, x_train, degree=d)
+        yhat_test = model.predict(x_test.reshape(-1,1)).ravel()
+        boot_results["train_mse"].append(mse(y_train, yhat_train))
+        boot_results["test_mse"].append(mse(y_test,  yhat_test))
 
         # 2) bootstrap-prediksjoner på TEST
-        boots_pred_test = np.empty((boots_reps, x_test.size), dtype=float)
+        boots_pred = np.empty((boots_reps, x_test.size), dtype=float)
+        
         for b in range(boots_reps):
             idx = rng.choice(x_train.size, size=x_train.size, replace=True)
             xb, yb = x_train[idx], y_train[idx]
             _, model_b = ols_gh(xb, yb, x_test, degree=d)
-            boots_pred_test[b] = model_b.predict(x_test.reshape(-1,1)).ravel()
+            boots_pred[b] = model_b.predict(x_test.reshape(-1,1)).ravel()
 
         # 3) aggreger mot y_test (y holdes fast)
-        mean_t = boots_pred_test.mean(axis=0)
-        var_t  = boots_pred_test.var(axis=0, ddof=1)
-        mse_t  = ((boots_pred_test - y_test[None, :])**2).mean(axis=0)
+        mean_t = boots_pred.mean(axis=0)
+        var_t  = boots_pred.var(axis=0, ddof=1)
+        mse_t  = ((boots_pred - y_test[None, :])**2).mean(axis=0)
         bias2_obs = (mean_t - y_test)**2
 
         boot_results["degree"].append(d)
-        boot_results["mse_boots_test"].append(mse_t.mean())
-        boot_results["var_boots_test_pred"].append(var_t.mean())
-        boot_results["bias2_boots_test_obs"].append(bias2_obs.mean())
+        boot_results["mse_boots"].append(mse_t.mean())
+        boot_results["var_boots"].append(var_t.mean())
+        boot_results["bias2_boots"].append(bias2_obs.mean())
 
     for k in list(boot_results.keys()):
         boot_results[k] = np.array(boot_results[k])
