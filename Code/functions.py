@@ -13,17 +13,14 @@ September 2025
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
-from sklearn.utils import resample
+
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.model_selection import train_test_split, KFold
+from sklearn.utils import resample #denne brukes ikke i koden 
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.metrics import mean_squared_error as mse
-from sklearn.linear_model import Lasso
-from sklearn.model_selection import KFold
 
 import matplotlib.style as mplstyle
 
