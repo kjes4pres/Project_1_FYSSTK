@@ -795,12 +795,11 @@ def bootstrap(degrees, x_train, x_test, y_train, y_test, boots_reps, seed=seed):
 
         # 2) bootstrap-prediksjoner på TEST
         boots_pred = np.empty((boots_reps, x_test.size), dtype=float)
-        
+
         for b in range(boots_reps):
             idx = rng.choice(x_train.size, size=x_train.size, replace=True)
             xb, yb = x_train[idx], y_train[idx]
-            _, model_b = ols_gh(xb, yb, x_test, degree=d)
-            boots_pred[b] = model_b.predict(x_test.reshape(-1,1)).ravel()
+            boots_pred[b], _ = ols_gh(xb, yb, x_test, degree=d)
 
         # 3) aggreger mot y_test (y holdes fast)
         mean_t = boots_pred.mean(axis=0)
