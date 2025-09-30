@@ -800,7 +800,7 @@ def bootstrap(degrees, x_train, x_test, y_train, y_test, boots_reps, seed=seed):
             idx = rng.choice(x_train.size, size=x_train.size, replace=True)
             xb, yb = x_train[idx], y_train[idx]
             boots_pred[b], _ = ols_gh(xb, yb, x_test, degree=d)
-
+            
         # 3) aggreger mot y_test (y holdes fast)
         mean_t = boots_pred.mean(axis=0)
         var_t  = boots_pred.var(axis=0, ddof=1)
