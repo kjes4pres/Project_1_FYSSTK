@@ -537,22 +537,57 @@ def Ridge_various_lambs(n, p, lambs):
 
 # --- Part c) ---
 
+def ols_gradient(X: np.ndarray, y: np.ndarray, beta: np.ndarray) -> np.ndarray:
+    """
+    Calculate the gradient of the Ordinary Least Squares cost function.
 
-def ols_gradient(X, y, beta):
+    Args:
+        X (np.ndarray)    : The input feature matrix of shape (n_samples, n_features).
+        y (np.ndarray)    : The target values of shape (n_samples,).
+        beta (np.ndarray) : The current coefficients of shape (n_features,).
+
+    Returns:
+        np.ndarray: The gradient of the OLS cost function with respect to beta.
+    """
     return (2 / len(y)) * (X.T @ (X @ beta - y))
 
+def ridge_gradient(X: np.ndarray, y: np.ndarray, beta: np.ndarray, lambda_: float) -> np.ndarray:
+    """
+    Calculate the gradient of the Ridge regression cost function.
 
-def ridge_gradient(X, y, beta, lambda_):
+    Args:
+        X (np.ndarray)    : The input feature matrix of shape (n_samples, n_features).
+        y (np.ndarray)    : The target values of shape (n_samples,).
+        beta (np.ndarray) : The current coefficients of shape (n_features,).
+        lambda_ (float)   : The regularization strength parameter.
+
+    Returns:
+        np.ndarray: The gradient of the Ridge cost function with respect to beta.
+    """
     return (2 / len(y)) * (X.T @ (X @ beta - y)) + 2 * lambda_ * beta
 
-
-def lasso_gradient(X, y, beta, lmbd):
-    return (2 / len(y)) * X.T @ (X @ beta - y) + np.sign(beta) * lmbd
-
-
 def gradient_descent_ols(
-    X, y, learning_rate=0.01, n_iterations=1000, tol=1e-6, use_tol=False
-):
+    X: np.ndarray, 
+    y: np.ndarray, 
+    learning_rate: float = 0.01, 
+    n_iterations: int = 1000, 
+    tol: float = 1e-6, 
+    use_tol: bool = False
+) -> tuple[np.ndarray, list[float]]:
+    """
+    Perform gradient descent for Ordinary Least Squares regression.
+
+    Args:
+        X (np.ndarray)        : The input feature matrix of shape (n_samples, n_features).
+        y (np.ndarray)        : The target values of shape (n_samples,).
+        learning_rate (float) : The learning rate for gradient descent.
+        n_iterations (int)    : The maximum number of iterations.
+        tol (float)           : The tolerance for convergence.
+        use_tol (bool)        : Whether to use tolerance for convergence.
+
+    Returns:
+        tuple[np.ndarray, list[float]]: The estimated coefficients and the cost history.
+    """
     n_samples, n_features = X.shape
     theta =  np.zeros(n_features)
     cost_history = []
@@ -567,10 +602,30 @@ def gradient_descent_ols(
             break
     return theta, cost_history
 
-
 def gradient_descent_ridge(
-    X, y, alpha, learning_rate=0.01, n_iterations=1000, tol=1e-6, use_tol=False
-):
+    X: np.ndarray, 
+    y: np.ndarray, 
+    alpha: float, 
+    learning_rate: float = 0.01, 
+    n_iterations: int = 1000, 
+    tol: float = 1e-6, 
+    use_tol: bool = False
+) -> tuple[np.ndarray, list[float]]:
+    """
+    Perform gradient descent for Ridge regression.
+
+    Args:
+        X (np.ndarray)        : The input feature matrix of shape (n_samples, n_features).
+        y (np.ndarray)        : The target values of shape (n_samples,).
+        alpha (float)         : The regularization strength parameter.
+        learning_rate (float) : The learning rate for gradient descent.
+        n_iterations (int)    : The maximum number of iterations.
+        tol (float)           : The tolerance for convergence.
+        use_tol (bool)        : Whether to use tolerance for convergence.
+
+    Returns:
+        tuple[np.ndarray, list[float]]: The estimated coefficients and the cost history.
+    """
     n_samples, n_features = X.shape
     theta = np.zeros(n_features)
     cost_history = []
@@ -585,25 +640,44 @@ def gradient_descent_ridge(
             break
     return theta, cost_history
 
-
 # --- Part d) ---
 
-
 def gradient_descent_advanced(
-    X,
-    y,
-    method="gd",
-    lr_method="ols",
-    learning_rate=0.01,
-    n_iterations=1000,
-    tol=1e-6,
-    use_tol=False,
-    beta=0.9,
-    beta1=0.8,
-    beta2=0.6,
-    epsilon=1e-8,
-    lambda_=0.01,
-):
+    X: np.ndarray,
+    y: np.ndarray,
+    method: str = "gd",
+    lr_method: str = "ols",
+    learning_rate: float = 0.01,
+    n_iterations: int = 1000,
+    tol: float = 1e-6,
+    use_tol: bool = False,
+    beta: float = 0.9,
+    beta1: float = 0.8,
+    beta2: float = 0.6,
+    epsilon: float = 1e-8,
+    lambda_: float = 0.01,
+) -> tuple[np.ndarray, list[float]]:
+    """
+    Perform advanced gradient descent with various optimization methods.
+
+    Args:
+        X (np.ndarray)        : The input feature matrix of shape (n_samples, n_features).
+        y (np.ndarray)        : The target values of shape (n_samples,).
+        method (str)          : The optimization method to use ('gd', 'momentum', 'adagrad', 'rmsprop', 'adam').
+        lr_method (str)       : The linear regression method ('ols', 'ridge', 'lasso').
+        learning_rate (float) : The learning rate for gradient descent.
+        n_iterations (int)    : The maximum number of iterations.
+        tol (float)           : The tolerance for convergence.
+        use_tol (bool)        : Whether to use tolerance for convergence.
+        beta (float)          : The momentum factor for 'momentum' method and 'rmsprop'.
+        beta1 (float)         : The exponential decay rate for the first moment estimate in 'adam'.
+        beta2 (float)         : The exponential decay rate for the second moment estimate in 'adam'.
+        epsilon (float)       : A small constant to prevent division by zero in adaptive learning methods.
+        lambda_ (float)       : The regularization strength parameter for ridge and lasso methods.
+
+    Returns:
+        tuple[np.ndarray, list[float]]: The estimated coefficients and the cost history.
+    """
     n_samples, n_features = X.shape
     theta = np.zeros(n_features)
     cost_history = []
@@ -658,8 +732,11 @@ def gradient_descent_advanced(
             break
     return theta, cost_history
 
-
 # --- Part e) ---
+
+def lasso_gradient(X, y, beta, lmbd):
+    return (2 / len(y)) * X.T @ (X @ beta - y) + np.sign(beta) * lmbd
+
 def gradient_descent_lasso(
     X, y, lmbd, learning_rate=0.0001, n_iterations=1000, tol=1e-6, use_tol=False
 ):
