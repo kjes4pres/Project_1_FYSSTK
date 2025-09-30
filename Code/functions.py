@@ -554,7 +554,7 @@ def gradient_descent_ols(
     X, y, learning_rate=0.01, n_iterations=1000, tol=1e-6, use_tol=False
 ):
     n_samples, n_features = X.shape
-    theta = np.zeros(n_features)
+    theta = np.random.random(n_features)
     cost_history = []
     for i in range(n_iterations):
         gradient = ols_gradient(X, y, theta)
@@ -572,7 +572,7 @@ def gradient_descent_ridge(
     X, y, alpha, learning_rate=0.01, n_iterations=1000, tol=1e-6, use_tol=False
 ):
     n_samples, n_features = X.shape
-    theta = np.zeros(n_features)
+    theta = np.random.random(n_features)
     cost_history = []
     for i in range(n_iterations):
         gradient = ridge_gradient(X, y, theta, alpha)
@@ -605,7 +605,7 @@ def gradient_descent_advanced(
     lambda_=0.01,
 ):
     n_samples, n_features = X.shape
-    theta = np.zeros(n_features)
+    theta = np.random.random(n_features)
     cost_history = []
     m = np.zeros(n_features)  # For momentum and Adam
     v = np.zeros(n_features)  # For Adam
