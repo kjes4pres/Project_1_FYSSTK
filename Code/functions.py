@@ -664,7 +664,7 @@ def gradient_descent_lasso(
     X, y, lmbd, learning_rate=0.0001, n_iterations=1000, tol=1e-6, use_tol=False
 ):
     n_samples, n_features = X.shape
-    theta = np.zeros(n_features)
+    theta = np.random.random(n_features)
     cost_history = []
     for i in range(n_iterations):
         gradient = lasso_gradient(X, y, theta, lmbd)
@@ -697,6 +697,7 @@ def stochastic_gradient_descent_advanced(
     n_epochs = 100
 ):
     n_samples, n_features = X.shape
+    seed=np.random.seed(2018)
     theta = np.random.random(n_features)
     batch_size = 20
     mini_batches = int(n_samples/batch_size)
@@ -705,10 +706,11 @@ def stochastic_gradient_descent_advanced(
     v = np.zeros(n_features)  # For Adam
     for j in range(n_epochs):
         for i in range(mini_batches):
-            init_pos = np.random.choice(np.arange(0, n_samples - batch_size), 1)
+            init_pos = np.random.choice(np.linspace(0, n_samples - batch_size,mini_batches), 1)
+            
             X_, y_ = (
-                X[init_pos[0] : init_pos[0] + batch_size],
-                y[init_pos[0] : init_pos[0] + batch_size],
+                X[int(init_pos[0]) : int(init_pos[0]) + batch_size],
+                y[int(init_pos[0]) : int(init_pos[0]) + batch_size],
             )
             if lr_method == "ols":
                 gradient = ols_gradient(X_, y_, theta)
