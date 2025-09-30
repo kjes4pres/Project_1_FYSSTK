@@ -691,6 +691,8 @@ def stochastic_gradient_descent_advanced(
     tol=1e-6,
     use_tol=False,
     beta=0.9,
+    beta1=0.8,
+    beta2=0.6,
     epsilon=1e-8,
     lambda_=0.01,
 ):
@@ -726,10 +728,10 @@ def stochastic_gradient_descent_advanced(
             adjusted_lr = learning_rate / (np.sqrt(v) + epsilon)
             gradient = adjusted_lr * gradient
         elif method == "adam":
-            m = beta * m + (1 - beta) * gradient
-            v = beta * v + (1 - beta) * (gradient**2)
-            m_hat = m / (1 - beta ** (i + 1))
-            v_hat = v / (1 - beta ** (i + 1))
+            m = beta1 * m + (1 - beta1) * gradient
+            v = beta2 * v + (1 - beta2) * (gradient**2)
+            m_hat = m / (1 - beta1 ** (i + 1))
+            v_hat = v / (1 - beta2 ** (i + 1))
             adjusted_lr = learning_rate / (np.sqrt(v_hat) + epsilon)
             gradient = adjusted_lr * m_hat
         elif method == "gd":
