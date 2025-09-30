@@ -693,11 +693,11 @@ def stochastic_gradient_descent_advanced(
     beta1=0.9,
     beta2=0.999,
     epsilon=1e-8,
-    lambda_=0.01,
+    lambda_=0.001,
     n_epochs = 100
 ):
     n_samples, n_features = X.shape
-    theta = np.zeros(n_features)
+    theta = np.random.random(n_features)
     batch_size = 20
     mini_batches = int(n_samples/batch_size)
     cost_history = []
