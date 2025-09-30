@@ -21,20 +21,43 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error as mse
 from sklearn.linear_model import Lasso
+from sklearn.model_selection import KFold
 
+import matplotlib.style as mplstyle
+mplstyle.use(['ggplot', 'fast'])
+
+# plt.rcParams.update({
+#     "text.usetex": True,       
+#     "font.family": "serif",    
+#     "font.size": 10, 
+# })
+
+
+# For reproducibility
+np.random.seed(2018)
 seed = np.random.seed(2018)
 
 # --- General functions ---
-#Definere runge
-def f_true(x):   
+
+def f_true(x): 
+    '''
+    Return 1D Runge function
+    '''  
     return 1.0 / (1.0 + 25.0 * x**2)  # Runge-lignende funksjon
 
-def make_data(n, seed=seed):        
+def make_data(n, seed=seed):     
+    '''
+    Makes a data set of length n over the Runge function
+    for x in (-1, 1).
+
+    Creates train and test data sets
+    '''
     x = np.linspace(-1, 1, n)   
 
     y_clean = f_true(x)    
-    y = y_clean + np.random.normal(0, 1)
+    y = y_clean + np.random.normal(0, 0.1, n)
 
     x_train, x_test, y_train, y_test = train_test_split(
         x, y, test_size=0.2, random_state=seed, shuffle=True
@@ -45,64 +68,8 @@ def make_data(n, seed=seed):
     full  = (x, y, y_clean)
     return train, test, full
 
-"""
-How to use:
-(train, test, full) = make_data(n_points)
-x_train, y_train = train
-x_test, y_test = test
-x_all, y_all, y_all_clean = full 
-"""
 
-def polynomial_features(x, p, intercept=True):
-    '''
-    Generate a design matrix X.
-
-    Parameters:
-        x: dataset
-        p: number of features
-        intercept: adds a column of intercept if set to True
-
-    Returns:
-        X: design matrix with dimensions
-             (n, p) if intercept=False or (n, p+1) if intercept=True
-    '''
-    n = len(x)
-
-    if intercept:
-        X = np.zeros((n, p + 1))
-        X[:, 0] = 1  # adds intercept
-        for i in range(1, p + 1):
-            X[:, i] = x ** i
-    else:
-        X = np.zeros((n, p))
-        for i in range(0, p):
-            X[:, i] = x ** (i + 1)
-
-    return X 
-
-def standardize(X, y):
-    '''
-    Scale and standardize a design matrix X and data y.
-
-    Parameters:
-        X: np.ndarray
-        y: np.ndarray
-    
-    Returns:
-        X_norm: np.ndarray
-        y_centered: np.ndarray
-        
-    '''
-    X_mean = X.mean(axis=0) # The mean of each column/feature
-    X_std = X.std(axis=0)
-    X_std[X_std == 0] = 1  # safeguard to avoid division by zero for constant features
-    X_norm = (X - X_mean) / X_std
-
-    # Center the target to zero mean
-    y_mean = y.mean()
-    y_centered = y - y_mean
-
-    return X_norm, y_centered
+# Jeg la inn disse fordi jeg må ha de analytiske og sammenligne, men kanskje jeg bør bytte?
 
 def MSE(y_data, y_pred):
     ''' 
@@ -125,17 +92,13 @@ def R2(y_data, y_pred):
         r2 = 1 - numerator/denumerator
     
     return r2
-                   
 
-# --- Part a) ---
 def OLS_parameters(X, y):
     ''' 
     Find the OLS parameters
     '''
     return np.linalg.pinv(X) @ y
 
-
-# --- Part b) ---
 def Ridge_parameters(X, y, lamb=0.01):
     '''
     Doc string kommer...
@@ -144,6 +107,267 @@ def Ridge_parameters(X, y, lamb=0.01):
     I = np.eye(np.shape(X.T @ X)[0])
     
     return np.linalg.inv(X.T @ X + lamb*I) @ X.T @ y
+
+# --- Part a) ---
+def OLS_results(n_vals, p_vals):
+    '''
+    Perform Ordinary Least Squares (OLS) regression on the Runge function
+    for multiple dataset sizes and polynomial degrees, and return evaluation results.
+
+    Parameters
+    ----------
+    n_vals : np.ndarray
+        A list of integers specifying the number of data points to generate for each dataset.
+    p_vals : np.ndarray
+        A list of integers specifying the polynomial degrees to fit using OLS.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing the results for each combination of dataset size and polynomial degree,
+        with the following columns:
+        - 'n': Number of data points.
+        - 'p': Polynomial degree used in OLS.
+        - 'theta': Coefficients of the fitted polynomial model.
+        - 'MSE': Mean squared error on the test set.
+        - 'R2': R-squared score on the test set.
+        - 'y_pred': Predicted values on the test set.
+        - 'y_test': True values on the test set.
+        - 'y_train': Training set target values.
+        - 'y_all': Full dataset target values (including noise).
+        - 'x_test': Test set input features.
+        - 'x_train': Training set input features.
+        - 'x_all': Full dataset input features.
+
+    Notes
+    -----
+    - The function uses `make_data(n)` to generate a dataset of size `n` from the Runge function.
+    - OLS is performed via a pipeline of `PolynomialFeatures`, `StandardScaler`, and `LinearRegression`,
+        which are functions from sklearn module.
+    - `StandardScaler` is used without mean centering (`with_mean=False`) since the model is fitted without intercept.
+    '''
+
+    results = []
+
+    for n in n_vals:
+        train, test, full = make_data(n)  # making a dataset with size n
+        x_train, y_train = train  # training data
+        x_test, y_test = test  # test data
+        x_all, y_all, y_all_clean = full  # actual data
+
+        x_train = x_train.reshape(-1, 1)
+        x_test = x_test.reshape(-1, 1)
+        x_all = x_all.reshape(-1, 1)
+
+        # making an OLS model for a given polynomial degree, p
+        for p in p_vals:
+            model = make_pipeline(
+                PolynomialFeatures(degree=p, include_bias=False),
+                StandardScaler(with_mean=False),
+                LinearRegression(fit_intercept=False)
+            )
+        
+            # using the training data to train the model
+            model.fit(x_train, y_train)
+
+            # using the test data to make a prediction, unsee data for the model
+            y_pred_test = model.predict(x_test)
+            y_pred_train = model.predict(x_train)
+        
+            # assessing the model with scores
+            mse_test = mean_squared_error(y_test, y_pred_test)
+            r2_test = r2_score(y_test, y_pred_test)
+
+            mse_train = mean_squared_error(y_train, y_pred_train)
+            r2_train = r2_score(y_train, y_pred_train)
+
+
+            # extracting the model features
+            theta = model.named_steps['linearregression'].coef_
+        
+            # saving the results in a pandas dataframe
+            results.append({
+                'n': n,
+                'p': p,
+                'theta': theta,
+                'MSE_test': mse_test,
+                'R2_test': r2_test,
+                'MSE_train': mse_train,
+                'R2_train': r2_train,
+                'y_pred_test': y_pred_test,
+                'y_pred_train': y_pred_train,
+                'y_test': y_test,
+                'y_train': y_train,
+                'y_all': y_all,
+                'x_test': x_test,
+                'x_train': x_train,
+                'x_all': x_all
+            })
+
+    df_OLS = pd.DataFrame(results)
+
+    return df_OLS
+
+def plot_OLS_results(df_OLS, n, p):
+    """
+    Plot the OLS results for a specific number of datapoints 'n' and polynomial degree `p`.
+    """
+    row = df_OLS[(df_OLS['n'] == n) & (df_OLS['p'] == p)].iloc[0]
+
+    x_train = row['x_train']
+    y_train = row['y_train']
+    x_test = row['x_test']
+    y_test = row['y_test']
+    x_all = row['x_all']
+    y_all = row['y_all']
+    y_pred_test = row['y_pred_test']
+    y_pred_train = row['y_pred_train']
+
+    plt.figure(figsize=(8, 5))
+
+    # Plot actual data
+    plt.scatter(x_all, y_all, s=6, label='Actual data')
+
+    # Plot training data
+    plt.scatter(x_train, y_train, s=6, label='Training data')
+
+    # Plot test data
+    plt.scatter(x_test, y_test, s=6, label='Test data')
+
+    # Plot model prediction on test data
+    plt.scatter(x_test, y_pred_test, s=6, label='Predicted (test)')
+
+    # Plot model prediction on test data
+    plt.scatter(x_train, y_pred_train, s=6, label='Predicted (train)')
+
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.title(f'OLS Polynomial Regression (n={n}, p={p})')
+    plt.legend()
+    plt.show()
+
+
+# --- Part b) ---
+def Ridge_results(n_vals, p_vals, lambdas):
+    '''
+    Perform Ridge regression on the Runge function
+    for multiple dataset sizes, penalization parameter and polynomial degrees, and return evaluation results.
+
+    Parameters
+    ----------
+    n_vals : np.ndarray
+        A list of integers specifying the number of data points to generate for each dataset.
+    p_vals : np.ndarray
+        A list of integers specifying the polynomial degrees to fit using OLS.
+    lambdas: np.ndarray
+        A list of floats specifying the penalization parameter for Ridge.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing the results for each combination of dataset size and polynomial degree,
+        with the following columns:
+        - 'n': Number of data points.
+        - 'p': Polynomial degree used in Ridge.
+        - 'lambda': Hyperparameter for Ridge
+        - 'theta': Coefficients of the fitted polynomial model.
+        - 'MSE': Mean squared error on the test set.
+        - 'R2': R-squared score on the test set.
+        - 'y_pred': Predicted values on the test set.
+        - 'y_test': True values on the test set.
+        - 'y_train': Training set target values.
+        - 'y_all': Full dataset target values (including noise).
+        - 'x_test': Test set input features.
+        - 'x_train': Training set input features.
+        - 'x_all': Full dataset input features.
+
+    Notes
+    -----
+    - The function uses `make_data(n)` to generate a dataset of size `n` from the Runge function.
+    - Ridge is performed via a pipeline of `PolynomialFeatures`, `StandardScaler`, and `LinearRegression`,
+        which are functions from sklearn module.
+    - `StandardScaler` is used without mean centering (`with_mean=False`) since the model is fitted without intercept.
+    '''
+    results = []
+
+    for n in n_vals:
+        train, test, full = make_data(n)  # making a dataset with size n
+        x_train, y_train = train
+        x_test, y_test = test
+        x_all, y_all, y_all_clean = full
+
+        x_train = x_train.reshape(-1, 1)
+        x_test = x_test.reshape(-1, 1)
+        x_all = x_all.reshape(-1, 1)
+
+        for p in p_vals:
+            for l in lambdas:
+                model = make_pipeline(
+                    PolynomialFeatures(degree=p, include_bias=False),
+                    StandardScaler(with_mean=False),
+                    Ridge(alpha=l, fit_intercept=False)
+                )
+        
+                model.fit(x_train, y_train)
+                y_pred = model.predict(x_test)
+
+                mse = mean_squared_error(y_test, y_pred)
+                r2 = r2_score(y_test, y_pred)
+
+                theta = model.named_steps['ridge'].coef_
+
+                results.append({
+                    'n': n,
+                    'p': p,
+                    'lambda': l, 
+                    'theta': theta,
+                    'MSE': mse,
+                    'R2': r2,
+                    'y_pred': y_pred,
+                    'y_test': y_test,
+                    'y_train': y_train,
+                    'y_all': y_all,
+                    'x_test': x_test,
+                    'x_train': x_train,
+                    'x_all': x_all
+                })
+
+    df_Ridge = pd.DataFrame(results)
+    return df_Ridge
+
+def plot_Ridge_results(df_Ridge, n, p, l):
+    '''
+    Plot Ridge regression results for specific number of data points 'n', polynomial degree 'p', and lambda 'l'.
+    '''
+    row = df_Ridge[(df_Ridge['n'] == n) & (df_Ridge['p'] == p) & (df_Ridge['lambda'] == l)].iloc[0]
+
+    x_train = row['x_train']
+    y_train = row['y_train']
+    x_test = row['x_test']
+    y_test = row['y_test']
+    x_all = row['x_all']
+    y_all = row['y_all']
+    y_pred = row['y_pred']
+
+    plt.figure(figsize=(8, 5))
+
+    # Plot actual data
+    plt.scatter(x_all, y_all, s=6, label='Actual data')
+
+    # Plot training data
+    plt.scatter(x_train, y_train, s=6, label='Training data')
+
+    # Plot test data
+    plt.scatter(x_test, y_test, s=6, label='Test data')
+
+    # Plot predicted test values
+    plt.scatter(x_test, y_pred, s=6, label='Predicted (test)')
+
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.title(rf'Ridge Regression (n={n}, p={p}, $\lambda$={l:.2e})')
+    plt.legend()
+    plt.show()
 
 
 # --- Part c) ---
@@ -154,11 +378,8 @@ def ols_gradient(X, y, beta):
 def ridge_gradient(X, y, beta, lambda_):
     return (2/len(y)) * (X.T @ (X @ beta - y)) + 2 * lambda_ * beta
 
-def lasso_gradient(X, y, beta, lmbd):
-    n = len(y)
-    grad = (2/n) * X.T @ (X @ beta - y)
-    grad[1:] += (lmbd/n) * np.sign(beta[1:])  # don’t regularize intercept
-    return grad
+def lasso_gradient(X,y,beta,lmbd):
+    return (2/len(y))*X.T @(X @ beta - y) + np.sign(beta) * lmbd
 
 def gradient_descent_ols(X, y, learning_rate=0.01, n_iterations=1000, tol=1e-6, use_tol=False):
     n_samples, n_features = X.shape
@@ -192,7 +413,7 @@ def gradient_descent_ridge(X, y, alpha, learning_rate=0.01, n_iterations=1000, t
 
 # --- Part d) ---
 
-def gradient_descent_advanced(X, y, method='gd', lr_method='ols', learning_rate=0.01, n_iterations=1000, tol=1e-6, use_tol=False, beta=0.9, epsilon=1e-8, lambda_=0.01):
+def gradient_descent_advanced(X, y, method='gd', lr_method='ols', learning_rate=0.01, n_iterations=1000, tol=1e-6, use_tol=False, beta=0.9, beta1=0.8, beta2=0.6, epsilon=1e-8, lambda_=0.01):
     n_samples, n_features = X.shape
     theta = np.zeros(n_features)
     cost_history = []   
@@ -219,10 +440,10 @@ def gradient_descent_advanced(X, y, method='gd', lr_method='ols', learning_rate=
             adjusted_lr = learning_rate / (np.sqrt(v) + epsilon)
             gradient = adjusted_lr * gradient
         elif method == 'adam':
-            m = beta * m + (1 - beta) * gradient
-            v = beta * v + (1 - beta) * (gradient**2)
-            m_hat = m / (1 - beta**(i+1))
-            v_hat = v / (1 - beta**(i+1))
+            m = beta1 * m + (1 - beta1) * gradient
+            v = beta2 * v + (1 - beta2) * (gradient**2)
+            m_hat = m / (1 - beta1**(i+1))
+            v_hat = v / (1 - beta2**(i+1))
             adjusted_lr = learning_rate / (np.sqrt(v_hat) + epsilon)
             gradient = adjusted_lr * m_hat
         elif method == 'gd':
@@ -244,10 +465,75 @@ def gradient_descent_advanced(X, y, method='gd', lr_method='ols', learning_rate=
     return theta, cost_history
 
 # --- Part e) ---
-
+def gradient_descent_lasso(X, y, lmbd, learning_rate=0.0001, n_iterations=1000, tol=1e-6, use_tol=False):
+    n_samples, n_features = X.shape
+    theta = np.zeros(n_features)
+    cost_history = []
+    for i in range(n_iterations):
+        gradient = lasso_gradient(X, y, theta,lmbd)
+        theta -= learning_rate * gradient
+        # cost is the Lasso cost function, including the regularization term
+        cost = (1/n_samples) * np.sum((X @ theta - y)**2) + lmbd * np.sum(np.abs(theta))
+        cost_history.append(cost)
+        if use_tol and i > 0 and abs(cost_history[-2] - cost) < tol:
+            print(f"Converged after {i} iterations.")
+            break
+    return theta, cost_history
 
 # --- Part f) ---
-
+def stochastic_gradient_descent_advanced(X, y, method='gd', lr_method='ols', learning_rate=0.01, n_iterations=1000, tol=1e-6, use_tol=False, beta=0.9, epsilon=1e-8, lambda_=0.01):
+    n_samples, n_features = X.shape
+    theta = np.zeros(n_features)
+    batch_size = 10
+    cost_history = []   
+    m = np.zeros(n_features)  # For momentum and Adam
+    v = np.zeros(n_features)  # For Adam 
+    for i in range(n_iterations):
+        init_pos = np.random.choice(np.arange(0,n_samples-batch_size),1)
+        X_, y_ = X[init_pos[0]:init_pos[0] + batch_size], y[init_pos[0]:init_pos[0] + batch_size]
+        if lr_method == 'ols':
+            gradient = ols_gradient(X_, y_, theta)
+        elif lr_method == 'ridge':
+            gradient = ridge_gradient(X_, y_, theta, lambda_=lambda_)
+        elif lr_method == "lasso":
+            gradient = lasso_gradient(X_,y_, theta, lambda_)
+        else:
+            raise ValueError("Unknown linear regression method")
+        if method == 'momentum':
+            m = beta * m + (1 - beta) * gradient
+            gradient = m
+        elif method == 'adagrad':
+            v += gradient**2
+            adjusted_lr = learning_rate / (np.sqrt(v) + epsilon)
+            gradient = adjusted_lr * gradient
+        elif method == 'rmsprop':
+            v = beta * v + (1 - beta) * gradient**2
+            adjusted_lr = learning_rate / (np.sqrt(v) + epsilon)
+            gradient = adjusted_lr * gradient
+        elif method == 'adam':
+            m = beta1 * m + (1 - beta1) * gradient
+            v = beta2 * v + (1 - beta2) * (gradient**2)
+            m_hat = m / (1 - beta1**(i+1))
+            v_hat = v / (1 - beta2**(i+1))
+            adjusted_lr = learning_rate / (np.sqrt(v_hat) + epsilon)
+            gradient = adjusted_lr * m_hat
+        elif method == 'gd':
+            # For GD, do nothing
+            pass
+        else:
+            raise ValueError("Unknown optimization method")
+        theta -= learning_rate * gradient
+        if lr_method == 'ols':
+            cost = (1/n_samples) * np.sum((X_ @ theta - y_)**2)
+        elif lr_method == 'ridge':
+            cost = (1/n_samples) * np.sum((X_ @ theta - y_)**2) + lambda_ * np.sum(theta**2)
+        elif lr_method == 'lasso':
+            cost = (1/n_samples) * np.sum((X_ @ theta - y_)**2) + lambda_ * np.sum(np.abs(theta))
+        cost_history.append(cost)
+        if use_tol and i > 0 and abs(cost_history[-2] - cost) < tol:
+            print(f"{method} converged after {i} iterations.")
+            break
+    return theta, cost_history
 # --- Part g) ---
 
 def ols(x_train, y_train, x_eval, degree):    
@@ -326,47 +612,47 @@ def kfold_cv_mse_ols(degree, k, x, y, seed=seed):
 
 #K-fold cross-validation for ridge, lasso
 
-    def cv_for_methods(method, degree, lambdas, k, x, y, seed=seed):
-        x = np.asarray(x); y = np.asarray(y)
+def cv_for_methods(method, degree, lambdas, k, x, y, seed=seed):
+    x = np.asarray(x); y = np.asarray(y)
 
-        kf = KFold(n_splits=k, shuffle=True, random_state=seed)
-        cv_means = []
+    kf = KFold(n_splits=k, shuffle=True, random_state=seed)
+    cv_means = []
 
-        for lam in lambdas:
-            kfold_mses = []
-            for train_idx, val_idx in kf.split(x):
-                x_train_cv, x_val = x[train_idx], x[val_idx]
-                y_train_cv, y_val = y[train_idx], y[val_idx]
+    for lam in lambdas:
+        kfold_mses = []
+        for train_idx, val_idx in kf.split(x):
+            x_train_cv, x_val = x[train_idx], x[val_idx]
+            y_train_cv, y_val = y[train_idx], y[val_idx]
 
-                if method == 'ridge':
-                    base = Ridge(alpha=lam, fit_intercept=True, 
-                    max_iter=300_000, 
-                    tol=1e-3)
-                elif method == "lasso":
-                    base = Lasso(alpha=lam, 
-                    fit_intercept=True, 
-                    max_iter=2_000_000, 
-                    tol=5e-3, 
-                    selection="cyclic")
-                else:
-                    raise ValueError("method must be 'ridge' or 'lasso'")
+            if method == 'ridge':
+                base = Ridge(alpha=lam, fit_intercept=True, 
+                max_iter=300_000, 
+                tol=1e-3)
+            elif method == "lasso":
+                base = Lasso(alpha=lam, 
+                fit_intercept=True, 
+                max_iter=2_000_000, 
+                tol=5e-3, 
+                selection="cyclic")
+            else:
+                raise ValueError("method must be 'ridge' or 'lasso'")
             
-                model = make_pipeline(PolynomialFeatures(degree, include_bias=False), 
-                StandardScaler(),
-                base)
+            model = make_pipeline(PolynomialFeatures(degree, include_bias=False), 
+            StandardScaler(),
+            base)
 
-                model.fit(x_train_cv.reshape(-1,1), y_train_cv)
-                pred_vals = model.predict(x_val.reshape(-1,1)).ravel()
-                kfold_mses.append(mse(y_val, pred_vals))
+            model.fit(x_train_cv.reshape(-1,1), y_train_cv)
+            pred_vals = model.predict(x_val.reshape(-1,1)).ravel()
+            kfold_mses.append(mse(y_val, pred_vals))
 
-            cv_means.append(np.mean(kfold_mses))
+        cv_means.append(np.mean(kfold_mses))
 
-        cv_means = np.array(cv_means)
-        best_idx = int(np.argmin(cv_means))
+    cv_means = np.array(cv_means)
+    best_idx = int(np.argmin(cv_means))
 
-        return {
-            "lambdas": np.array(lambdas, dtype=float),
-            "cv_mse": cv_means,
-            "best_lambda": float(lambdas[best_idx]),
-            "best_mse": float(cv_means[best_idx])
-        }
+    return {
+        "lambdas": np.array(lambdas, dtype=float),
+        "cv_mse": cv_means,
+        "best_lambda": float(lambdas[best_idx]),
+        "best_mse": float(cv_means[best_idx])
+    }

@@ -51,3 +51,7 @@ def stochastic_gradient_descent_advanced(X, y, method='gd', lr_method='ols', lea
             print(f"{method} converged after {i} iterations.")
             break
     return theta, cost_history
+
+
+
+x = np.linspace(-1,1)
