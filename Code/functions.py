@@ -363,7 +363,7 @@ def Ridge_parameters(X, y, lamb, intercept=True):
 def Ridge_various_poly_deg(n, lamb, p_vals):
     """
     Performs Ridge regression analysis on
-    the Runge function for a given polynomial degree,
+    the Runge function for a given number of data points,
     a given hyperparameter and for a range of samples (data points).
 
     Inputs:
