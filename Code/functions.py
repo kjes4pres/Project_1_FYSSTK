@@ -690,8 +690,8 @@ def stochastic_gradient_descent_advanced(
     tol=1e-6,
     use_tol=False,
     beta=0.9,
-    beta1=0.8,
-    beta2=0.6,
+    beta1=0.9,
+    beta2=0.999,
     epsilon=1e-8,
     lambda_=0.01,
     n_epochs = 100
@@ -753,7 +753,7 @@ def stochastic_gradient_descent_advanced(
                 np.abs(theta)
             )
         cost_history.append(cost)
-        if use_tol and i > 0 and abs(cost_history[-2] - cost) < tol:
+        if use_tol and j > 100 and abs(cost_history[-2] - cost) < tol:
             print(f"{method} converged after {j} epochs.")
             break
     return theta, cost_history
