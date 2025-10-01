@@ -51,6 +51,7 @@ def make_data(n, seed=seed):
     x_s = scaler.transform(x)
 
     y_clean = f_true(x_s)
+    y_clean = f_true(x_s).flatten()
     y = y_clean + np.random.normal(0, 0.1, n)
 
     x_train, x_test, y_train, y_test = train_test_split(
