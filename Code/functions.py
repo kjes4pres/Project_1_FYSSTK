@@ -178,12 +178,15 @@ def OLS_various_poly_deg(n, p_vals, noise=True):
     # Making the data and splitting into test/train
     if noise:
         train, test, full = make_data(n)  # making a dataset with size n
+        x_train, y_train = train  # training data
+        x_test, y_test = test  # test data
+        x_all, y_all, y_all_clean = full  # full data
+
     else:
         train, test, full = make_clean_data(n) # dataset without noise
-
-    x_train, y_train = train  # training data
-    x_test, y_test = test  # test data
-    x_all, y_all, y_all_clean = full  # full data
+        x_train, y_train = train  # training data
+        x_test, y_test = test  # test data
+        x_all, y_all = full  # full data
 
     x_train = x_train.reshape(-1, 1)
     x_test = x_test.reshape(-1, 1)
