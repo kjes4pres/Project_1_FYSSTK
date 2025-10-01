@@ -905,9 +905,8 @@ def ols_gh(x_train, y_train, x_eval, degree):
     Regular ols from scikit
     """
     model = make_pipeline(
-        PolynomialFeatures(degree=degree, include_bias=False),
-        StandardScaler(),
-        LinearRegression(fit_intercept=True)
+        PolynomialFeatures(degree=degree, include_bias=True), #ingen scaling fordi vi scaler i make_data
+        LinearRegression(fit_intercept=False)
     )
     model.fit(x_train.reshape(-1, 1), y_train)
     y_pred = model.predict(x_eval.reshape(-1, 1)).ravel()
@@ -992,11 +991,10 @@ def cv_for_methods(method, degree, lambdas, k, x, y, seed=seed):
             y_train_cv, y_val = y[train_idx], y[val_idx]
 
             if method == "ridge":
-                base = Ridge(alpha=lam, fit_intercept=True, max_iter=300_000, tol=1e-3)
+                base = Ridge(alpha=lam, fit_intercept=False, max_iter=300_000, tol=1e-3)
             elif method == "lasso":
                 base = Lasso(
                     alpha=lam,
-                    fit_intercept=True,
                     max_iter=2_000_000,
                     tol=5e-3,
                     selection="cyclic",
@@ -1005,7 +1003,7 @@ def cv_for_methods(method, degree, lambdas, k, x, y, seed=seed):
                 raise ValueError("method must be 'ridge' or 'lasso'")
 
             model = make_pipeline(
-                PolynomialFeatures(degree, include_bias=False), StandardScaler(), base
+                PolynomialFeatures(degree, include_bias=True), base
             )
 
             model.fit(x_train_cv.reshape(-1, 1), y_train_cv)
