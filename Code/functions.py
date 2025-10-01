@@ -43,6 +43,9 @@ def make_data(n, seed=seed):
 
     Creates train and test data sets
     """
+
+    rng = np.random.default_rng(seed)
+
     x = np.linspace(-1, 1, n)
     x = x.reshape(-1, 1)
 
@@ -52,7 +55,7 @@ def make_data(n, seed=seed):
 
     y_clean = f_true(x_s)
     y_clean = f_true(x_s).flatten()
-    y = y_clean + np.random.normal(0, 0.1, n)
+    y = y_clean + rng.normal(0, 0.1, n)
 
     x_train, x_test, y_train, y_test = train_test_split(
         x_s, y, test_size=0.2, random_state=seed, shuffle=True
@@ -98,6 +101,8 @@ def make_clean_data(n, seed=seed):
 
     Creates train and test data sets
     """
+    rng = np.random.default_rng(seed)
+
     x = np.linspace(-1, 1, n)
 
     x = x.reshape(-1, 1)
