@@ -658,8 +658,9 @@ def gradient_descent_ols(
         cost = (1 / n_samples) * np.sum((X @ theta - y) ** 2)
         cost_history.append(cost)
         if use_tol and i > 0 and abs(cost_history[-2] - cost) < tol:
-            print(f"Converged after {i} iterations.")
+            print(f"OLS converged after {i} iterations.")
             break
+    print(f"OLS did not converge.")
     return theta, cost_history
 
 def gradient_descent_ridge(
@@ -696,8 +697,9 @@ def gradient_descent_ridge(
         cost = (1 / n_samples) * np.sum((X @ theta - y) ** 2) + alpha * np.sum(theta**2)
         cost_history.append(cost)
         if use_tol and i > 0 and abs(cost_history[-2] - cost) < tol:
-            print(f"Converged after {i} iterations.")
+            print(f"Ridge converged after {i} iterations.")
             break
+    print(f"Ridge did not converge.")
     return theta, cost_history
 
 # --- Part d) ---
