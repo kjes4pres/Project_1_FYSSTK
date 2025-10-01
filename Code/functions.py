@@ -801,7 +801,7 @@ def gradient_descent_lasso(
     X, y, lmbd, learning_rate=0.0001, n_iterations=1000, tol=1e-6, use_tol=False
 ):
     n_samples, n_features = X.shape
-    theta = np.random.random(n_features)
+    theta = np.zeros(n_features)
     cost_history = []
     for i in range(n_iterations):
         gradient = lasso_gradient(X, y, theta, lmbd)
@@ -834,8 +834,7 @@ def stochastic_gradient_descent_advanced(
     n_epochs = 100
 ):
     n_samples, n_features = X.shape
-    seed=np.random.seed(2018)
-    theta = np.random.random(n_features)
+    theta = np.zeros(n_features)
     batch_size = 20
     mini_batches = int(n_samples/batch_size)
     cost_history = []
