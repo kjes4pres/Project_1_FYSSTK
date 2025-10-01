@@ -905,8 +905,9 @@ def ols_gh(x_train, y_train, x_eval, degree):
     Regular ols from scikit
     """
     model = make_pipeline(
-        PolynomialFeatures(degree=degree, include_bias=True), #ingen scaling fordi vi scaler i make_data
-        LinearRegression(fit_intercept=False)
+        PolynomialFeatures(degree=degree, include_bias=False), #ingen scaling fordi vi scaler i make_data
+        StandardScaler(),
+        LinearRegression(fit_intercept=True)
     )
     model.fit(x_train.reshape(-1, 1), y_train)
     y_pred = model.predict(x_eval.reshape(-1, 1)).ravel()
@@ -995,6 +996,7 @@ def cv_for_methods(method, degree, lambdas, k, x, y, seed=seed):
             elif method == "lasso":
                 base = Lasso(
                     alpha=lam,
+                    fit_intercept=False,
                     max_iter=2_000_000,
                     tol=5e-3,
                     selection="cyclic",
