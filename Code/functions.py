@@ -1035,7 +1035,7 @@ def cv_for_methods(method, degree, lambdas, k, x, y, seed=seed):
 
     #Code for plotting heatmap 
 
-    def _build_heatmap_matrix(results_by_deg):
+def _build_heatmap_matrix(results_by_deg):
     degrees_sorted = sorted(results_by_deg.keys())
     all_lams = np.unique(np.concatenate(
         [np.asarray(results_by_deg[d]["lambdas"]) for d in degrees_sorted]
