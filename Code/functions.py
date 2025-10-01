@@ -15,20 +15,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
-from sklearn.model_selection import train_test_split, KFold
-from sklearn.utils import resample #denne brukes ikke i koden 
+from sklearn.model_selection import train_test_split, KFold 
 from sklearn.pipeline import make_pipeline
-from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.metrics import mean_squared_error as mse
 import matplotlib.style as mplstyle
 
 mplstyle.use(["ggplot", "fast"])
-
-# plt.rcParams.update({
-#     "text.usetex": True,
-#     "font.family": "serif",
-#     "font.size": 10,
-# })
 
 
 # For reproducibility
@@ -36,7 +28,6 @@ np.random.seed(2018)
 seed = np.random.seed(2018)
 
 # --- General functions ---
-
 
 def f_true(x):
     """
@@ -48,22 +39,27 @@ def f_true(x):
 def make_data(n, seed=seed):
     """
     Makes a data set of length n over the Runge function
-    for x in (-1, 1).
+    for x in (-1, 1). Includes stochastic noise.
 
     Creates train and test data sets
     """
     x = np.linspace(-1, 1, n)
+    x = x.reshape(-1, 1)
 
-    y_clean = f_true(x)
+    scaler = StandardScaler(with_std=False)
+    scaler.fit(x)
+    x_s = scaler.transform(x)
+
+    y_clean = f_true(x_s)
     y = y_clean + np.random.normal(0, 0.1, n)
 
     x_train, x_test, y_train, y_test = train_test_split(
-        x, y, test_size=0.2, random_state=seed, shuffle=True
+        x_s, y, test_size=0.2, random_state=seed, shuffle=True
     )
 
     train = (x_train, y_train)
     test = (x_test, y_test)
-    full = (x, y, y_clean)
+    full = (x_s, y, y_clean)
     return train, test, full
 
 
@@ -93,6 +89,34 @@ def R2(y_data, y_pred):
 
 
 # --- Part a) ---
+
+def make_clean_data(n, seed=seed):
+    """
+    Makes a data set of length n over the Runge function
+    for x in (-1, 1), with no stochastic noise.
+
+    Creates train and test data sets
+    """
+    x = np.linspace(-1, 1, n)
+
+    x = x.reshape(-1, 1)
+
+    scaler = StandardScaler(with_std=False)
+    scaler.fit(x)
+    x_s = scaler.transform(x)
+
+    y = f_true(x_s)
+    
+    x_train, x_test, y_train, y_test = train_test_split(
+        x_s, y, test_size=0.2, random_state=seed, shuffle=True
+    )
+
+    train = (x_train, y_train)
+    test = (x_test, y_test)
+    full = (x_s, y)
+    return train, test, full
+
+
 def polynomial_features(x, p, intercept=True):
     """
     Creates a design matrix X with p features and n samples.
@@ -121,25 +145,6 @@ def polynomial_features(x, p, intercept=True):
 
     return X
 
-def my_scaler(X):
-    """
-    Standarizes a matrix by column.
-
-    Inputs:
-        X (np.ndarray): Matrix of shape (n, p), where `n` is the 
-        number of samples and `p` is the number of features.
-
-    Returns:
-        X_scaled (np.ndarray): Scaled data of shape (n, p),
-        where each column has 0 mean and standard deviation 1.
-    """
-    mean = np.mean(X, axis=0)
-    std = np.std(X, axis=0)
-    std[std == 0] = 1  # avoid division by zero
-
-    X_scaled = (X - mean)/std
-
-    return X_scaled
 
 def OLS_parameters(X, y):
     """
@@ -156,7 +161,7 @@ def OLS_parameters(X, y):
     """
     return np.linalg.pinv(X) @ y
 
-def OLS_various_poly_deg(n, p_vals):
+def OLS_various_poly_deg(n, p_vals, noise=True):
     """
     Performs Ordinary Least Square analysis on
     the Runge function for a given number of samples
@@ -171,7 +176,11 @@ def OLS_various_poly_deg(n, p_vals):
     """
     results = []
     # Making the data and splitting into test/train
-    train, test, full = make_data(n)  # making a dataset with size n
+    if noise:
+        train, test, full = make_data(n)  # making a dataset with size n
+    else:
+        train, test, full = make_clean_data(n) # dataset without noise
+
     x_train, y_train = train  # training data
     x_test, y_test = test  # test data
     x_all, y_all, y_all_clean = full  # full data
@@ -180,15 +189,10 @@ def OLS_various_poly_deg(n, p_vals):
     x_test = x_test.reshape(-1, 1)
     x_all = x_all.reshape(-1, 1)
 
-    # Scaling the full data, the training and the test set separately
-    x_train_s = my_scaler(x_train)
-    x_test_s = my_scaler(x_test)
-    x_all_s = my_scaler(x_all)
-
     for p in p_vals:
         # Making a design matrix based of the scaled data
-        X_train = polynomial_features(x_train_s, p, intercept=True)
-        X_test = polynomial_features(x_test_s, p, intercept=True)
+        X_train = polynomial_features(x_train, p, intercept=True)
+        X_test = polynomial_features(x_test, p, intercept=True)
 
         # Finding the OLS parameters from the training data
         theta = OLS_parameters(X_train, y_train)
@@ -217,9 +221,9 @@ def OLS_various_poly_deg(n, p_vals):
             'y_test': y_test,
             'y_train': y_train,
             'y_all': y_all,
-            'x_test': x_test_s,
-            'x_train': x_train_s,
-            'x_all': x_all_s
+            'x_test': x_test,
+            'x_train': x_train,
+            'x_all': x_all
             })
 
     df_OLS = pd.DataFrame(results)
@@ -284,16 +288,11 @@ def OLS_various_n_data(p, n_vals):
         x_train = x_train.reshape(-1, 1)
         x_test = x_test.reshape(-1, 1)
         x_all = x_all.reshape(-1, 1)
-
-        # Scaling the full data, the training and the test set separately
-        x_train_s = my_scaler(x_train)
-        x_test_s = my_scaler(x_test)
-        x_all_s = my_scaler(x_all)
-
         
         # Making a design matrix based of the scaled data
-        X_train = polynomial_features(x_train_s, p, intercept=True)
-        X_test = polynomial_features(x_test_s, p, intercept=True)
+        X_train = polynomial_features(x_train, p, intercept=True)
+        X_test = polynomial_features(x_test, p, intercept=True)
+
 
         # Finding the OLS parameters from the training data
         theta = OLS_parameters(X_train, y_train)
@@ -385,15 +384,10 @@ def Ridge_various_poly_deg(n, lamb, p_vals):
     x_test = x_test.reshape(-1, 1)
     x_all = x_all.reshape(-1, 1)
 
-    # Scaling the full data, the training and the test set separately
-    x_train_s = my_scaler(x_train)
-    x_test_s = my_scaler(x_test)
-    x_all_s = my_scaler(x_all)
-
     for p in p_vals:
         # Making a design matrix based of the scaled data
-        X_train = polynomial_features(x_train_s, p, intercept=True)
-        X_test = polynomial_features(x_test_s, p, intercept=True)
+        X_train = polynomial_features(x_train, p, intercept=True)
+        X_test = polynomial_features(x_test, p, intercept=True)
 
         # Finding the OLS parameters from the training data
         theta = Ridge_parameters(X_train, y_train, lamb, intercept=True)
@@ -422,9 +416,9 @@ def Ridge_various_poly_deg(n, lamb, p_vals):
             'y_test': y_test,
             'y_train': y_train,
             'y_all': y_all,
-            'x_test': x_test_s,
-            'x_train': x_train_s,
-            'x_all': x_all_s
+            'x_test': x_test,
+            'x_train': x_train,
+            'x_all': x_all
             })
 
     df_Ridge = pd.DataFrame(results)
@@ -479,6 +473,7 @@ def Ridge_various_lambs(n, p, lambs):
         df_Ridge (pd.DataFrame): Dataframe containing all results.
     """
     results = []
+
     # Making the data and splitting into test/train
     train, test, full = make_data(n)  # making a dataset with size n
     x_train, y_train = train  # training data
@@ -489,14 +484,9 @@ def Ridge_various_lambs(n, p, lambs):
     x_test = x_test.reshape(-1, 1)
     x_all = x_all.reshape(-1, 1)
 
-    # Scaling the full data, the training and the test set separately
-    x_train_s = my_scaler(x_train)
-    x_test_s = my_scaler(x_test)
-    x_all_s = my_scaler(x_all)
-
     # Making a design matrix based of the scaled data
-    X_train = polynomial_features(x_train_s, p, intercept=True)
-    X_test = polynomial_features(x_test_s, p, intercept=True)
+    X_train = polynomial_features(x_train, p, intercept=True)
+    X_test = polynomial_features(x_test, p, intercept=True)
 
     for l in lambs:
         # Finding the OLS parameters from the training data
@@ -526,9 +516,75 @@ def Ridge_various_lambs(n, p, lambs):
             'y_test': y_test,
             'y_train': y_train,
             'y_all': y_all,
-            'x_test': x_test_s,
-            'x_train': x_train_s,
-            'x_all': x_all_s
+            'x_test': x_test,
+            'x_train': x_train,
+            'x_all': x_all
+            })
+
+    df_Ridge = pd.DataFrame(results)
+
+    return df_Ridge
+
+def Ridge_various_n_data(p, lamb, n_vals):
+    """
+    Performs Ordinary Least Square analysis on
+    the Runge function for a given polynomial degree
+    and a range of samples (data points).
+
+    Inputs:
+        p (int): Polynomial degree.
+        p (np.ndarray): List of number of samples.
+
+    Returns:
+        df_Ridge (pd.DataFrame): Dataframe containing all results.
+    """
+    results = []
+
+    for n in n_vals:
+        # Making the data and splitting into test/train
+        train, test, full = make_data(n)  # making a dataset with size n
+        x_train, y_train = train  # training data
+        x_test, y_test = test  # test data
+        x_all, y_all, y_all_clean = full  # full data
+
+        x_train = x_train.reshape(-1, 1)
+        x_test = x_test.reshape(-1, 1)
+        x_all = x_all.reshape(-1, 1)
+
+        # Making a design matrix based of the scaled data
+        X_train = polynomial_features(x_train, p, intercept=True)
+        X_test = polynomial_features(x_test, p, intercept=True)
+
+        # Finding the Ridge parameters from the training data
+        theta = Ridge_parameters(X_train, y_train, lamb)
+
+        # Prediciting
+        y_pred_test = X_test @ theta
+        y_pred_train = X_train @ theta
+
+        # assessing the model with scores
+        mse_test = MSE(y_test, y_pred_test)
+        r2_test = R2(y_test, y_pred_test)
+
+        mse_train = MSE(y_train, y_pred_train)
+        r2_train = R2(y_train, y_pred_train)
+        
+        # saving the results in a pandas dataframe
+        results.append({
+            'n': n,
+            'theta': theta,
+            'MSE_test': mse_test,
+            'R2_test': r2_test,
+            'MSE_train': mse_train,
+            'R2_train': r2_train,
+            'y_pred_test': y_pred_test,
+            'y_pred_train': y_pred_train,
+            'y_test': y_test,
+            'y_train': y_train,
+            'y_all': y_all,
+            'x_test': x_test,
+            'x_train': x_train,
+            'x_all': x_all
             })
 
     df_Ridge = pd.DataFrame(results)
