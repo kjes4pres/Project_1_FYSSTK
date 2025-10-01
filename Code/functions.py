@@ -1032,3 +1032,56 @@ def cv_for_methods(method, degree, lambdas, k, x, y, seed=seed):
         "best_lambda": float(lambdas[best_idx]),
         "best_mse": float(cv_means[best_idx]),
     }
+
+    #Code for plotting heatmap 
+
+    def _build_heatmap_matrix(results_by_deg):
+    degrees_sorted = sorted(results_by_deg.keys())
+    all_lams = np.unique(np.concatenate(
+        [np.asarray(results_by_deg[d]["lambdas"]) for d in degrees_sorted]
+    ))
+    lam_log = np.log10(all_lams); lam_log.sort()
+    lambdas_common = 10**lam_log
+
+    H = np.zeros((len(degrees_sorted), len(lambdas_common)))
+    for i, d in enumerate(degrees_sorted):
+        lam_d = np.asarray(results_by_deg[d]["lambdas"])
+        mse_d = np.asarray(results_by_deg[d]["cv_mse"])
+        order = np.argsort(lam_d)
+        H[i, :] = np.interp(lam_log, np.log10(lam_d[order]), mse_d[order])
+    return degrees_sorted, lambdas_common, H
+
+def plot_cv_heatmap_with_best(results_by_deg, title_prefix, n_k_folds=10, cmap="viridis"):
+    degrees_sorted, lambdas_common, H = _build_heatmap_matrix(results_by_deg)
+
+    i_star, j_star = np.unravel_index(np.argmin(H), H.shape)
+    d_star = degrees_sorted[i_star]
+    lam_star = lambdas_common[j_star]
+    mse_star = H[i_star, j_star]
+
+    fig, ax = plt.subplots(figsize=(7.0, 4.8))
+    x = np.log10(lambdas_common)
+    x_edges = np.concatenate(([x[0]-(x[1]-x[0])], (x[:-1]+x[1:])/2, [x[-1]+(x[-1]-x[-2])]))
+    y = np.arange(len(degrees_sorted), dtype=float)
+    y_edges = np.concatenate(([y[0]-0.5], y[1:]-0.5, [y[-1]+0.5]))
+
+    mesh = ax.pcolormesh(x_edges, y_edges, H, shading='auto', cmap=cmap)
+    cbar = plt.colorbar(mesh, ax=ax, pad=0.02)
+    cbar.set_label(f'{n_k_folds}-fold CV MSE')
+
+    ax.scatter(np.log10(lam_star), i_star, marker='x', s=120, linewidths=2.2, color='deepskyblue', zorder=3)
+    ax.set_title(fr"{title_prefix} — best: degree={d_star}, $\lambda$ = {lam_star:.2e}, MSE={mse_star:.4f}")
+    ax.set_xlabel(r'$\lambda$ (log scale)')
+    ax.set_ylabel('Polynomial degree')
+    ax.set_yticks(np.arange(len(degrees_sorted)))
+    ax.set_yticklabels([str(d) for d in degrees_sorted])
+
+    xticks = np.array([1e-6, 1e-4, 1e-2, 1e0, 1e2])
+    xticks = xticks[(xticks>=lambdas_common.min()) & (xticks<=lambdas_common.max())]
+    if len(xticks) > 0:
+        ax.set_xticks(np.log10(xticks))
+        ax.set_xticklabels([fr'$10^{{{int(np.log10(t))}}}$' for t in xticks])
+
+    fig.tight_layout()
+    best = {"degree": int(d_star), "lambda": float(lam_star), "cv_mse": float(mse_star)}
+    return fig, ax, best
