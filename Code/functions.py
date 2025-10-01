@@ -1005,7 +1005,7 @@ def cv_for_methods(method, degree, lambdas, k, x, y, seed=seed):
                 raise ValueError("method must be 'ridge' or 'lasso'")
 
             model = make_pipeline(
-                PolynomialFeatures(degree, include_bias=True), base
+                PolynomialFeatures(degree, include_bias=False), base
             )
 
             model.fit(x_train_cv.reshape(-1, 1), y_train_cv)
