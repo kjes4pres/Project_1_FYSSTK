@@ -22,6 +22,8 @@ from sklearn.model_selection import train_test_split, KFold
 from sklearn.pipeline import make_pipeline
 from sklearn.metrics import mean_squared_error as mse
 import matplotlib.style as mplstyle
+from pathlib import Path
+
 
 mplstyle.use(["ggplot", "fast"])
 
@@ -765,18 +767,18 @@ def gradient_descent_advanced(
             gradient = m
         elif method == "adagrad":
             v += gradient**2
-            adjusted_lr = learning_rate / (np.sqrt(v) + epsilon)
+            adjusted_lr = 1 / (np.sqrt(v + epsilon))
             gradient = adjusted_lr * gradient
         elif method == "rmsprop":
             v = beta * v + (1 - beta) * gradient**2
-            adjusted_lr = learning_rate / (np.sqrt(v) + epsilon)
+            adjusted_lr = 1 / (np.sqrt(v + epsilon))
             gradient = adjusted_lr * gradient
         elif method == "adam":
             m = beta1 * m + (1 - beta1) * gradient
             v = beta2 * v + (1 - beta2) * (gradient**2)
             m_hat = m / (1 - beta1 ** (i + 1))
             v_hat = v / (1 - beta2 ** (i + 1))
-            adjusted_lr = learning_rate / (np.sqrt(v_hat) + epsilon)
+            adjusted_lr = 1 / (np.sqrt(v_hat) + epsilon)
             gradient = adjusted_lr * m_hat
         elif method == "gd":
             # For GD, do nothing
@@ -865,22 +867,21 @@ def stochastic_gradient_descent_advanced(
             else:
                 raise ValueError("Unknown linear regression method")
             if method == "momentum":
-                m = beta * m + (1 - beta) * gradient
-                gradient = m
+                gradient = beta * m + (1 - beta) * gradient
             elif method == "adagrad":
                 v += gradient**2
-                adjusted_lr = learning_rate / (np.sqrt(v) + epsilon)
+                adjusted_lr = 1 / (np.sqrt(v + epsilon))
                 gradient = adjusted_lr * gradient
             elif method == "rmsprop":
                 v = beta * v + (1 - beta) * gradient**2
-                adjusted_lr = learning_rate / (np.sqrt(v) + epsilon)
+                adjusted_lr = 1 / (np.sqrt(v + epsilon))
                 gradient = adjusted_lr * gradient
             elif method == "adam":
                 m = beta1 * m + (1 - beta1) * gradient
                 v = beta2 * v + (1 - beta2) * (gradient**2)
                 m_hat = m / (1 - beta1 ** (i + 1))
                 v_hat = v / (1 - beta2 ** (i + 1))
-                adjusted_lr = learning_rate / (np.sqrt(v_hat) + epsilon)
+                adjusted_lr = 1 / (np.sqrt(v_hat) + epsilon)
                 gradient = adjusted_lr * m_hat
             elif method == "gd":
                 # For GD, do nothing
