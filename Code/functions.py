@@ -774,7 +774,6 @@ def gradient_descent_advanced(
             adjusted_lr = learning_rate / (np.sqrt(v + epsilon))
             theta -= adjusted_lr * gradient
         elif method == "adam":
-            t += 1
             m = beta1 * m + (1 - beta1) * gradient
             v = beta2 * v + (1 - beta2) * (gradient**2)
             m_hat = m / (1 - beta1 ** (i + 1))
@@ -782,8 +781,7 @@ def gradient_descent_advanced(
             adjusted_lr = learning_rate / (np.sqrt(v_hat) + epsilon)
             theta -= adjusted_lr * m_hat
         elif method == "gd":
-            # For GD, do nothing
-            pass
+            theta -= learning_rate * gradient
         else:
             raise ValueError("Unknown optimization method")
 
@@ -884,8 +882,7 @@ def stochastic_gradient_descent_advanced(
                 adjusted_lr = learning_rate / (np.sqrt(v_hat) + epsilon)
                 theta -= adjusted_lr * m_hat
             elif method == "gd":
-                # For GD, do nothing
-                pass
+                theta -= learning_rate * gradient
             else:
                 raise ValueError("Unknown optimization method")
         if lr_method == "ols":
