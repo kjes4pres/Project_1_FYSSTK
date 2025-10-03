@@ -104,7 +104,6 @@ def make_clean_data(n, seed=seed):
 
     Creates train and test data sets
     """
-    rng = np.random.default_rng(seed)
 
     x = np.linspace(-1, 1, n)
 
