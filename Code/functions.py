@@ -800,6 +800,55 @@ def gradient_descent_advanced(
             break
     return theta, cost_history
 
+def create_analytical_and_gradient_decent(X_test, y_test, X_train, y_train, lr_method, learning_rate, n_iterations, tolerance, use_tol, lambda_):
+    if lr_method == 'OLS':
+        theta  = OLS_parameters(X_train, y_train)
+        theta_gd, cost_history = gradient_descent_ols(X_train, y_train, learning_rate, n_iterations, tolerance, use_tol)
+    if lr_method == 'Ridge':
+        theta  = OLS_parameters(X_train, y_train)
+        theta_gd, cost_history = gradient_descent_ridge(X_train, y_train, lambda_, learning_rate, n_iterations, tolerance, use_tol)
+    y_pred    = X_test @ theta
+    y_pred_gd = X_test @ theta_gd
+    return cost_history, y_pred, y_pred_gd, theta, theta_gd
+
+def compare_analytical_and_gradient_decent(X_test, y_test, X_train, y_train, learning_rates, n_iterations, tolerance, use_tol, lambda_):
+    mse_values_ols      = []
+    #r2_values_ols       = []
+    mse_gd_values_ols   = []
+    #r2_gd_values_ols    = []
+    mse_values_ridge    = []
+    #r2_values_ridge     = []
+    mse_gd_values_ridge = []
+    #r2_gd_values_ridge  = []
+    for learning_rate in learning_rates:
+        # OLS Parameters and Predictions
+        theta_OLS = OLS_parameters(X_train, y_train)
+        theta_gd_OLS, cost_history_ols = gradient_descent_ols(X_train, y_train, learning_rate, n_iterations, tolerance, use_tol)
+        y_pred_ols    = X_test @ theta_OLS
+        y_pred_gd_ols = X_test @ theta_gd_OLS
+        mse_OLS = MSE(y_test, y_pred_ols)
+        #r2_OLS  = R2(y_test, y_pred_ols)
+        mse_gd_OLS = MSE(y_test, y_pred_gd_ols)
+        #r2_gd_OLS  = R2(y_test, y_pred_gd_ols)
+        mse_values_ols.append(mse_OLS)
+        #r2_values_ols.append(r2_OLS)
+        mse_gd_values_ols.append(mse_gd_OLS)
+        #r2_gd_values_ols.append(r2_gd_OLS)
+        # Ridge Parameters and Predictions
+        theta_Ridge = OLS_parameters(X_train, y_train)
+        theta_gd_Ridge, cost_history_ridge = gradient_descent_ridge(X_train, y_train, lambda_, learning_rate, n_iterations, tolerance, use_tol)
+        y_pred_ridge    = X_test @ theta_Ridge
+        y_pred_gd_ridge = X_test @ theta_gd_Ridge
+        mse_ridge = MSE(y_test, y_pred_ridge)
+        #r2_ridge  = R2(y_test, y_pred_ridge)
+        mse_gd_ridge = MSE(y_test, y_pred_gd_ridge)
+        #r2_gd_ridge  = R2(y_test, y_pred_gd_ridge)
+        mse_values_ridge.append(mse_ridge)
+        #r2_values_ridge.append(r2_ridge)
+        mse_gd_values_ridge.append(mse_gd_ridge)
+        #r2_gd_values_ridge.append(r2_gd_ridge)
+    return mse_values_ols, mse_gd_values_ols, mse_values_ridge, mse_gd_values_ridge, y_pred_ols, y_pred_gd_ols, y_pred_ridge, y_pred_gd_ridge
+
 # --- Part e) ---
 
 def lasso_gradient(X, y, beta, lmbd):
