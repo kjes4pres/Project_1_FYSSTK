@@ -762,8 +762,8 @@ def gradient_descent_advanced(
         else:
             raise ValueError("Unknown linear regression method")
         if method == "momentum":
-            m = beta * m + gradient
-            theta -= learning_rate*m
+            m = beta * m + gradient*learning_rate
+            theta -= m
         elif method == "adagrad":
             v += gradient**2
             adjusted_lr = learning_rate / (np.sqrt(v + epsilon))
@@ -862,8 +862,8 @@ def stochastic_gradient_descent_advanced(
             else:
                 raise ValueError("Unknown linear regression method")
             if method == "momentum":
-                m = beta * m + gradient
-                theta -= learning_rate * m
+                m = beta * m + gradient*learning_rate
+                theta -=  m
             elif method == "adagrad":
                 v += gradient**2
                 adjusted_lr = learning_rate / (np.sqrt(v + epsilon))
