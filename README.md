@@ -8,7 +8,8 @@ A `requirements.txt` file is located in the repository. To reproduce our results
 
 ### Overview of contents
 The repository is organizewd as followed:
-* `/Code/functions.py` contains functions and modules used across the project.
-* `/Code/a_and_b.ipynb` makes use of the functions in `/Code/functions.py` and produces results for tsk a and b of the project. OLS and Ridge regression are analyzed in terms of MSE, dependence on model complexity, and regularization parameter. 
-* ...
-* `/Code/kjersti_week39.ipynb` is a temporary notebook for answering the weekly exercises of week 39. 
+* `Code/functions.py` contains functions and modules used across the project.
+* `Code/a_and_b.ipynb` makes use of the functions in `/Code/functions.py` and produces results for task a and b of the project. OLS and Ridge regression are analyzed in terms of MSE and R^2 scores. The dependence on model complexity/polynomial degree, numberof samples, and regularization parameter are assessed.
+* `Code/c_and_d_and_e.ipynb` 
+* `Code/f.ipynb` 
+* `Code/g_and_h.ipynb` 
