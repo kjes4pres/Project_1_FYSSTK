@@ -955,7 +955,17 @@ def stochastic_gradient_descent_advanced(
 
 def ols_gh(x_train, y_train, x_eval, degree):
     """
-    Regular ols from scikit
+    Fit and evaluate OLS polynomial regression (scikit-learn pipeline).
+
+    Inputs:
+        x_train: array-like of shape (n_samples, 1). Training inputs.
+        y_train: array-like of shape (n_samples, ). Training targets.
+        x_eval: array-like of shape (m_samples, 1). Inputs at which to compute predictions (e.g validation test).
+        degree: int. Maximum polynomial degree used in ‘PolynomialFeatures’.
+
+    Returns:
+        y_pred: ndarray of shape (m_samples, ). Predicted values at ‘x_eval’.
+        model: sklearn.pipeline.Pipeline. 
     """
     model = make_pipeline(
         PolynomialFeatures(degree=degree, include_bias=True), #ingen scaling fordi vi scaler i make_data
@@ -966,6 +976,30 @@ def ols_gh(x_train, y_train, x_eval, degree):
     return y_pred, model
 
 def bootstrap(degrees, x_train, x_test, y_train, y_test, boots_reps, seed=seed):
+    """
+    Bootstrap estimation of test error, bias and variance for OLS over degrees.
+
+    Inputs:
+        degree: int. Polynomial degrees to evaluate (and iterate over).
+        x_train: array-like of shape (n_samples, 1). Training inputs.
+        x_test: array-like of shape (n_samples, 1). Test inputs (held 
+        out and kept fixed during bootstrap).
+        y_train: array-like of shape (n_samples, ). Training targets.
+        y_test: array-like of shape (n_samples, ). Test targets (used 
+        for error/bias evaluation).
+        boots_reps: Number of bootsrap resamples (B).
+        seed: specified speed for regeneration.
+
+    Returns:
+        boot_results : dict
+            Dictionary with vectorized results (np.ndarray for each key):
+            - "degree": degrees evaluated (shape (D,))
+            - "mse_boots": mean over test points of the bootstrap MSE, (shape (D,))
+            - "var_boots": mean predictive variance over test points, (shape (D,))
+            - "bias_boots": mean observational bias over test points, (shape (D,))
+            - "train_mse": reference train MSE for the model fit on full train, (shape (D,))
+            - "test_mse": reference test MSE for the model fit on full train, (shape (D,))
+    """
     
     rng = np.random.default_rng(seed)
 
@@ -973,7 +1007,7 @@ def bootstrap(degrees, x_train, x_test, y_train, y_test, boots_reps, seed=seed):
         "degree": [],
         "mse_boots": [],       # <- MSE på test, bootstrap-aggregert
         "var_boots": [],  # <- prediktiv varians på test
-        "bias2_boots": [], # <- (mean_pred − y_test)^2  (observasjons-bias^2)
+        "bias_boots": [], # <- (mean_pred − y_test)^2  (observasjons-bias^2)
         "train_mse": [],
         "test_mse": [],
     }
@@ -997,12 +1031,12 @@ def bootstrap(degrees, x_train, x_test, y_train, y_test, boots_reps, seed=seed):
         mean_t = boots_pred.mean(axis=0)
         var_t  = boots_pred.var(axis=0, ddof=1)
         mse_t  = ((boots_pred - y_test[None, :])**2).mean(axis=0)
-        bias2_obs = (mean_t - y_test)**2
+        bias_obs = (mean_t - y_test)**2
 
         boot_results["degree"].append(d)
         boot_results["mse_boots"].append(mse_t.mean())
         boot_results["var_boots"].append(var_t.mean())
-        boot_results["bias2_boots"].append(bias2_obs.mean())
+        boot_results["bias_boots"].append(bias_obs.mean())
 
     for k in list(boot_results.keys()):
         boot_results[k] = np.array(boot_results[k])
@@ -1013,8 +1047,21 @@ def bootstrap(degrees, x_train, x_test, y_train, y_test, boots_reps, seed=seed):
 
 # K-fold cross-validation for OLS
 
-
 def kfold_cv_mse_ols(degree, k, x, y, seed=seed):
+    """
+    Compute k-fold cross-validated MSE for an OLS polynomial model of given degree.
+
+    Inputs:
+        degree: int. Polynomial degree used in the OLS pipeline.
+        k: int. Number of folds (K).
+        x: array-like of shape (n_samples, 1). Input features (single column).
+        y: array-like of shape (n_samples,). Target values.
+        seed: Specified seed for fold shuffling.
+
+    Returns
+    -------
+    float: mean validation MSE averaged over the K folds.
+    """
     kf = KFold(n_splits=k, shuffle=True, random_state=seed)
     kfold_mses = []
     for train_idx, val_idx in kf.split(x):
@@ -1027,10 +1074,32 @@ def kfold_cv_mse_ols(degree, k, x, y, seed=seed):
     return np.mean(kfold_mses)
 
 
-# K-fold cross-validation for ridge, lasso
+# K-fold cross-validation for Ridge, Lasso
 
+def cv_for_methods(degree, method, lambdas, k, x, y, seed=seed):
+    """
+    K-fold CV over a grid of lambdas for Ridge or Lasso at a fixed degree.
 
-def cv_for_methods(method, degree, lambdas, k, x, y, seed=seed):
+    Inputs:
+        degree: int. Polynomial degree for feature expansion.
+        method: {"ridge", "lasso"}. Which regularized linear model to use.
+        lambdas: array-like of shape (L,)
+        Positive regularization strengths to evaluate.
+        k: int. Number of folds (K).
+        x: array-like of shape (n_samples, 1). Input features (single column).
+        y: array-like of shape (n_samples,). Target values.
+        seed: Specified seed for fold shuffling.
+
+    Returns
+    -------
+    dict
+        {
+          "lambdas": np.ndarray of shape (L,),
+          "cv_mse":  np.ndarray of shape (L,),  # mean MSE per lambda
+          "best_lambda": float,
+          "best_mse":    float
+        }
+    """
     x = np.asarray(x)
     y = np.asarray(y)
 
@@ -1076,25 +1145,80 @@ def cv_for_methods(method, degree, lambdas, k, x, y, seed=seed):
         "best_mse": float(cv_means[best_idx]),
     }
 
-    #Code for plotting heatmap 
+#Code for plotting heatmap 
 
-def _build_heatmap_matrix(results_by_deg):
+def build_heatmap_matrix(results_by_deg):
+    """
+    Build a (degree × lambda) CV-MSE matrix on a common lambda grid.
+
+    Inputs:
+        results_by_deg : dict[int, dict]. The result dictionary from cv_for_methods.
+
+    Returns:
+        degrees_sorted: list[int].
+        lambdas_common: ndarray of shape (L,).
+        H : ndarray of shape (len(degrees_sorted), L).
+        best_points : list[tuple[int, float, float]].
+    """
     degrees_sorted = sorted(results_by_deg.keys())
-    all_lams = np.unique(np.concatenate(
-        [np.asarray(results_by_deg[d]["lambdas"]) for d in degrees_sorted]
-    ))
-    lam_log = np.log10(all_lams); lam_log.sort()
+    all_lams = np.unique(np.concatenate([np.asarray(results_by_deg[d]["lambdas"]) for d in degrees_sorted]))
+    lam_log = np.log10(all_lams)
+    lam_log.sort()
     lambdas_common = 10**lam_log
 
     H = np.zeros((len(degrees_sorted), len(lambdas_common)))
+    best_points = []
+
     for i, d in enumerate(degrees_sorted):
         lam_d = np.asarray(results_by_deg[d]["lambdas"])
         mse_d = np.asarray(results_by_deg[d]["cv_mse"])
         order = np.argsort(lam_d)
-        H[i, :] = np.interp(lam_log, np.log10(lam_d[order]), mse_d[order])
-    return degrees_sorted, lambdas_common, H
+        lam_d = lam_d[order]
+        mse_d = mse_d[order]
+        H[i, :] = np.interp(lam_log, np.log10(lam_d), mse_d)
+        best_points.append((i, results_by_deg[d]["best_lambda"], results_by_deg[d]["best_mse"]))
+    
+    return degrees_sorted, lambdas_common, H, best_points
+
+def _plot_heat(ax, lambdas, degrees, H, title, best_points):
+    x = np.log10(lambdas)
+    x_edges = np.concatenate(([x[0] - (x[1]-x[0])], (x[:-1]+x[1:])/2, [x[-1] + (x[-1]-x[-2])]))
+    y = np.arange(len(degrees), dtype=float)
+    y_edges = np.concatenate(([y[0]-0.5], y[1:]-0.5, [y[-1]+0.5]))
+
+    mesh = ax.pcolormesh(x_edges, y_edges, H, shading='auto')
+    cbar = plt.colorbar(mesh, ax=ax, pad=0.02)
+    cbar.set_label('CV MSE')
+
+    for row_i, blam, bmse in best_points:
+        ax.plot(np.log10(blam), row_i, marker='o', markersize=4, mec='white', mfc='white', alpha=0.9)
+
+    ax.set_title(title)
+    ax.set_xlabel(r'$\lambda$ (log$_{10}$)')
+    ax.set_yticks(np.arange(len(degrees)))
+    ax.set_yticklabels([f'd={d}' for d in degrees])
+    ax.grid(False)
+
+    xticks_log = np.log10(np.array([1e-4, 1e-3, 1e-2, 1e-1]))
+    ax.set_xticks(xticks_log)
+    ax.set_xticklabels([r'$10^{-4}$', r'$10^{-3}$', r'$10^{-2}$', r'$10^{-1}$'])
 
 def plot_cv_heatmap_with_best(results_by_deg, title_prefix, n_k_folds=10, cmap="viridis"):
+    """
+    Plot a degree×lambda CV MSE heatmap and mark the global minimum.
+
+    Inputs:
+        results_by_deg: dict[int, dict]. Mapping degree -> result dict from `cv_for_methods`.
+        title_prefix: str. Text prefix for the plot title (e.g., "Ridge" or "Lasso").
+        n_k_folds: int, optional. Used only for the colorbar label (default 10).
+        cmap: str, optional. Matplotlib colormap name (default "viridis").
+
+    Returns:
+        fig: matplotlib.figure.Figure. The created figure.
+        ax: matplotlib.axes.Axes. The heatmap axes.
+        best: dict
+            {"degree": int, "lambda": float, "cv_mse": float} for the global min.
+    """
     degrees_sorted, lambdas_common, H = _build_heatmap_matrix(results_by_deg)
 
     i_star, j_star = np.unravel_index(np.argmin(H), H.shape)
@@ -1127,4 +1251,5 @@ def plot_cv_heatmap_with_best(results_by_deg, title_prefix, n_k_folds=10, cmap="
 
     fig.tight_layout()
     best = {"degree": int(d_star), "lambda": float(lam_star), "cv_mse": float(mse_star)}
+    
     return fig, ax, best
