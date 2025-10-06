@@ -1180,6 +1180,44 @@ def build_heatmap_matrix(results_by_deg):
     
     return degrees_sorted, lambdas_common, H, best_points
 
+def _plot_heat(ax, lambdas, degrees, H, title, best_points):
+    """
+    Plot a heatmap (degree x lambda) of cross-validated MSE values for regularized models.
+
+    Inputs:
+        ax: matplotlib.axes.Axes.
+        lambdas: array-like of shape (L,).
+        degrees: array-like of shape (D,).
+        H: array-like of shape (D, L)
+        title: str.
+        best_points: list[tuple[int, float, float]].
+
+    Returns:
+    None
+        The function modifies 'ax' in place and does not return a value.
+    """
+    x = np.log10(lambdas)
+    x_edges = np.concatenate(([x[0] - (x[1]-x[0])], (x[:-1]+x[1:])/2, [x[-1] + (x[-1]-x[-2])]))
+    y = np.arange(len(degrees), dtype=float)
+    y_edges = np.concatenate(([y[0]-0.5], y[1:]-0.5, [y[-1]+0.5]))
+
+    mesh = ax.pcolormesh(x_edges, y_edges, H, shading='auto')
+    cbar = plt.colorbar(mesh, ax=ax, pad=0.02)
+    cbar.set_label('CV MSE')
+
+    for row_i, blam, bmse in best_points:
+        ax.plot(np.log10(blam), row_i, marker='o', markersize=4, mec='white', mfc='white', alpha=0.9)
+
+    ax.set_title(title)
+    ax.set_xlabel(r'$\lambda$ (log$_{10}$)')
+    ax.set_yticks(np.arange(len(degrees)))
+    ax.set_yticklabels([f'd={d}' for d in degrees])
+    ax.grid(False)
+
+    xticks_log = np.log10(np.array([1e-4, 1e-3, 1e-2, 1e-1]))
+    ax.set_xticks(xticks_log)
+    ax.set_xticklabels([r'$10^{-4}$', r'$10^{-3}$', r'$10^{-2}$', r'$10^{-1}$'])
+
 def plot_cv_heatmap_with_best(results_by_deg, title_prefix, n_k_folds=10, cmap="viridis"):
     """
     Plot a degree x lambda CV MSE heatmap and mark the global minimum.
