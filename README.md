@@ -10,6 +10,7 @@ A `requirements.txt` file is located in the repository. To reproduce our results
 The repository is organizewd as followed:
 * `Code/functions.py` contains functions and modules used across the project.
 * `Code/a_and_b.ipynb` makes use of the functions in `/Code/functions.py` and produces results for task a and b of the project. OLS and Ridge regression are analyzed in terms of MSE and R^2 scores. The dependence on model complexity/polynomial degree, numberof samples, and regularization parameter are assessed.
+* `Code/c_and_d.ipynb` makes use of the functions in `/Code/functions.py` and produces results for task c and d of the project. OLS and Ridge regression are analyzed comparing analytical and gradient decent methods. Gradient decent methods with adaptive learning rate is also introduced and used to investigate the preformance of each method. 
 * `Code/c_and_d_and_e.ipynb` 
 * `Code/f.ipynb` 
 * `Code/g_and_h.ipynb` 
