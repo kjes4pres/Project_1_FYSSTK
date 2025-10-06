@@ -13,4 +13,4 @@ The repository is organizewd as followed:
 * `Code/c_and_d.ipynb` makes use of the functions in `/Code/functions.py` and produces results for task c and d of the project. OLS and Ridge regression are analyzed comparing analytical and gradient descent methods. Gradient descent methods with adaptive learning rate is also introduced and used to investigate the preformance of each method. 
 * `Code/c_and_d_and_e.ipynb` produces some results for task c, d, and e, including Lasso.
 * `Code/f.ipynb` makes use of functions in `Code/functions.py` and produces results for task f in the project. Stochastic gradient descent with optimization methods.
-* `Code/g_and_h.ipynb` 
+* `Code/g_and_h.ipynb` makes use of the functions in `/Code/functions.py` and produces results for task g and h of the project. OLS, Ridge and Lasso regression are analyzed using Bootstrap and K-fold cross-validation resampling techiniques. The dependence on model complexity/polynomial degree, number of samples, and regularization parameter are assessed.
