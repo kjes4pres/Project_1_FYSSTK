@@ -857,6 +857,21 @@ def lasso_gradient(X, y, beta, lmbd):
 def gradient_descent_lasso(
     X, y, lmbd, learning_rate=0.0001, n_iterations=1000, tol=1e-6, use_tol=False
 ):
+    """
+    Perform gradient descent for Lasso regression.
+
+    Args:
+        X (np.ndarray)        : The input feature matrix of shape (n_samples, n_features).
+        y (np.ndarray)        : The target values of shape (n_samples,).
+        alpha (float)         : The regularization strength parameter.
+        learning_rate (float) : The learning rate for gradient descent.
+        n_iterations (int)    : The maximum number of iterations.
+        tol (float)           : The tolerance for convergence.
+        use_tol (bool)        : Whether to use tolerance for convergence.
+
+    Returns:
+        tuple[np.ndarray, list[float]]: The estimated coefficients and the cost history.
+    """
     n_samples, n_features = X.shape
     theta = np.zeros(n_features)
     cost_history = []
@@ -890,6 +905,27 @@ def stochastic_gradient_descent_advanced(
     lambda_=0.001,
     n_epochs = 100
 ):
+    """
+    Perform advanced gradient descent with various optimization methods.
+
+    Args:
+        X (np.ndarray)        : The input feature matrix of shape (n_samples, n_features).
+        y (np.ndarray)        : The target values of shape (n_samples,).
+        method (str)          : The optimization method to use ('gd', 'momentum', 'adagrad', 'rmsprop', 'adam').
+        lr_method (str)       : The linear regression method ('ols', 'ridge', 'lasso').
+        learning_rate (float) : The learning rate for gradient descent.
+        tol (float)           : The tolerance for convergence.
+        use_tol (bool)        : Whether to use tolerance for convergence.
+        beta (float)          : The momentum factor for 'momentum' method and 'rmsprop'.
+        beta1 (float)         : The exponential decay rate for the first moment estimate in 'adam'.
+        beta2 (float)         : The exponential decay rate for the second moment estimate in 'adam'.
+        epsilon (float)       : A small constant to prevent division by zero in adaptive learning methods.
+        lambda_ (float)       : The regularization strength parameter for ridge and lasso methods.
+        n_epochs (int)        : Number of epochs to be performed.
+
+    Returns:
+        tuple[np.ndarray, list[float]]: The estimated coefficients and the cost history.
+    """
     n_samples, n_features = X.shape
     theta = np.zeros(n_features)
     batch_size = 20
