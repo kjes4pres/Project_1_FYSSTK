@@ -900,7 +900,7 @@ def stochastic_gradient_descent_advanced(
     t = 0  # timestep for Adam
     for j in range(n_epochs):
         for i in range(mini_batches):
-            indices = np.random.choice(n_samples, batch_size, replace=False)
+            indices = np.random.choice(n_samples, batch_size, replace=True)
             X_, y_ = X[indices], y[indices]
             if lr_method == "ols":
                 gradient = ols_gradient(X_, y_, theta)
